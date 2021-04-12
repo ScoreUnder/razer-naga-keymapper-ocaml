@@ -1,4 +1,4 @@
-open Batteries
+let const x _ = x
 
 module Result = struct
   include Result
@@ -6,6 +6,8 @@ module Result = struct
   let pull_fst (a, b) = map (fun v -> (v, b)) a
 
   let pull_snd (a, b) = map (fun v -> (a, v)) b
+
+  let catch f x = try Ok (f x) with e -> Error e
 end
 
 module String = struct
@@ -13,7 +15,10 @@ module String = struct
 
   let split_once ~chr str =
     index_opt str chr
-    |> Option.map (fun ind -> (slice ~last:ind str, slice ~first:(ind + 1) str))
+    |> Option.map (fun ind ->
+           (sub str 0 ind, sub str (ind + 1) (String.length str - ind - 1)))
+
+  let starts_with ~chr str = if str = "" then false else str.[0] == chr
 end
 
 type parse_error =
@@ -37,7 +42,7 @@ let parse_conf_action num line =
 let parse_conf_line num line =
   let num = succ num (* make lines 1-indexed *) in
   let trimmed = String.trim line in
-  if String.starts_with trimmed "#" || trimmed = "" then None
+  if String.starts_with trimmed ~chr:'#' || trimmed = "" then None
   else
     Some
       (match String.split_once ~chr:'-' trimmed with

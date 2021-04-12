@@ -1,15 +1,15 @@
-open Batteries
-
 module Map = struct
-  include Map
+  include Map.Make (Int)
+
+  let find_default def x map = try find x map with Not_found -> def
 
   let multi_add_rev k v m =
-    let next = v :: Map.find_default [] k m in
-    Map.add k next m
+    let next = v :: find_default [] k m in
+    add k next m
 end
 
-module Enum = struct
-  include Enum
+module Gen = struct
+  include Gen
 
   let group_by_rev kf vf e =
     fold (fun acc el -> Map.multi_add_rev (kf el) (vf el) acc) Map.empty e
@@ -30,10 +30,22 @@ module Result = struct
 
   (** converts an option into a result, given a default value for the error case *)
   let of_option_d d o = match o with Some x -> Ok x | None -> Error d
+
+  let map_both o e r = match r with Ok v -> Ok (o v) | Error v -> Error (e v)
+end
+
+module List = struct
+  include List
+
+  let rec find_map_opt f l =
+    match l with
+    | x :: xs -> (
+        match f x with Some v as s -> s | None -> find_map_opt f xs)
+    | [] -> None
 end
 
 let collect_result_enum_rev e =
-  Enum.fold
+  Gen.fold
     (fun acc v ->
       match acc with
       | Ok lst -> (
@@ -95,38 +107,48 @@ module NagaDaemon = struct
         None
     with Unix.Unix_error _ -> None
 
-  let find_razer_device devices = devices |> List.find_map_opt open_if_exists
+  let find_razer_device (devices : (string * string) list) :
+      Types.dev_pair option =
+    devices |> List.find_map_opt open_if_exists
 
   let load_conf path =
-    Enum.(
-      File.lines_of path
-      |> mapi Parser.parse_conf_line
-      |> concat_map Option.enum |> collect_result_enum_rev
-      |> Result.map_both (List.enum %> group_by_rev fst snd) List.rev)
+    Gen.(
+      IO.with_lines path (fun lines ->
+          lines
+          |> mapi Parser.parse_conf_line
+          |> filter_map (fun x -> x)
+          |> collect_result_enum_rev
+          |> Result.map_both
+               (fun x -> x |> of_list |> group_by_rev fst snd)
+               List.rev))
 end
 
-let print_action_map =
-  Map.print Int.print
-    (List.print
-    @@ Tuple2.print
-         (fun out v -> Operator.show_operator v |> String.print out)
-         String.print)
+let print_action_map file map =
+  Printf.fprintf file "{\n";
+  map
+  |> Map.iter (fun k l ->
+         Printf.fprintf file "  %d: [" k;
+         l
+         |> List.iter (fun (op, v) ->
+                Printf.fprintf file "(%s, %s); " (Operator.show_operator op) v);
+         Printf.fprintf file "]\n");
+  Printf.fprintf file "}"
 
 let init_devices devices =
   ignore @@ NagaDaemon.Types.(Ioctl.(eviocgrab devices.keyboard.fd))
 
 let rec run devices config state =
-  ignore(run, config, state);
+  ignore (run, config, state);
   let open NagaDaemon.Types in
-  match Unix.select [devices.keyboard.fd; devices.pointer.fd] [] [] (-1.0) with
+  match
+    Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
+  with
   | ls, _, _ ->
-    if List.mem devices.keyboard.fd ls then begin
-      let size = 0x18 in
-      let buf = Bytes.create (size * 64) in
-      ignore@@Unix.read devices.keyboard.fd buf 0 (Bytes.length buf)
-    end;
-    if List.mem devices.pointer.fd ls then begin
-    end
+      (if List.mem devices.keyboard.fd ls then
+       let size = 0x18 in
+       let buf = Bytes.create (size * 64) in
+       ignore @@ Unix.read devices.keyboard.fd buf 0 (Bytes.length buf));
+      if List.mem devices.pointer.fd ls then ()
 
 let () =
   let initial_config =

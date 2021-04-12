@@ -1,10 +1,10 @@
 (executable
  (name razer_naga_keymapper)
  (modules operator parser ioctl razer_naga_keymapper)
- (libraries batteries)
+ (libraries gen unix)
  (foreign_stubs
-   (language c)
-   (names ioctl_stub input_stub))
+  (language c)
+  (names ioctl_stub input_stub))
  (preprocess
   (pps ppx_deriving.show))
  (modes native byte_complete)
