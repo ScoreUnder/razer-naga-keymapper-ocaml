@@ -1,0 +1,4 @@
+*.exe
+*.bc
+*.js
+_build/

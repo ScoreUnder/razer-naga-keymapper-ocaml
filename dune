@@ -1,0 +1,18 @@
+(executable
+ (name razer_naga_keymapper)
+ (modules operator parser ioctl razer_naga_keymapper)
+ (libraries batteries)
+ (foreign_stubs
+   (language c)
+   (names ioctl_stub input_stub))
+ (preprocess
+  (pps ppx_deriving.show))
+ (modes native byte_complete)
+ (flags
+  (:standard -principal))
+ (promote (until-clean)))
+
+(env
+ (release
+  (ocamlopt_flags
+   (:standard -O3 -unbox-closures -rounds 6))))
