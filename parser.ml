@@ -16,7 +16,8 @@ module String = struct
   let split_once ~chr str =
     index_opt str chr
     |> Option.map (fun ind ->
-           (sub str 0 ind, sub str (ind + 1) (String.length str - ind - 1)))
+           let after_pos = succ ind in
+           (sub str 0 ind, sub str after_pos (String.length str - after_pos)))
 
   let starts_with ~chr str = if str = "" then false else str.[0] == chr
 end
