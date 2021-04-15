@@ -6,6 +6,36 @@ module Map = struct
   let multi_add_rev k v m =
     let next = v :: find_default [] k m in
     add k next m
+
+  let pp_key fmt (key : key) = Format.pp_print_int fmt key
+
+  let pp_kv pp_val fmt (k, v) =
+    let open Format in
+    pp_open_box fmt 0;
+    pp_key fmt k;
+    pp_print_char fmt ':';
+    pp_print_space fmt ();
+    pp_val fmt v;
+    pp_close_box fmt ()
+
+  let pp (pp_val : Format.formatter -> 'a -> unit) (fmt : Format.formatter)
+      (obj : 'a t) =
+    let open Format in
+    if obj = empty then pp_print_string fmt "{}"
+    else (
+      pp_open_vbox fmt 2;
+      pp_print_char fmt '{';
+      pp_print_cut fmt ();
+      pp_print_seq
+        ~pp_sep:(fun f () ->
+          pp_print_char f ',';
+          pp_print_space f ())
+        (pp_kv pp_val)
+        fmt
+      @@ to_seq obj;
+      pp_print_break fmt 0 (-2);
+      pp_print_char fmt '}';
+      pp_close_box fmt ())
 end
 
 module Gen = struct
@@ -123,20 +153,6 @@ module NagaDaemon = struct
                List.rev))
 end
 
-let print_action_map file map =
-  let print_op_tuple i (op, v) =
-    if i <> 0 then output_string file "; ";
-    Printf.fprintf file "(%s, %s)" (Operator.show_operator op) v
-  in
-  let print_kv k v =
-    Printf.fprintf file "  %d: [" k;
-    List.iteri print_op_tuple v;
-    output_string file "]\n"
-  in
-  output_string file "{\n";
-  Map.iter print_kv map;
-  output_string file "}"
-
 let init_devices devices =
   ignore @@ NagaDaemon.Types.(Ioctl.(eviocgrab devices.keyboard.fd))
 
@@ -166,8 +182,8 @@ let () =
 
   initial_config
   |> Result.iter (fun result ->
-         print_action_map stdout result;
-         print_newline ());
+         print_endline
+           ([%derive.show: (Operator.operator * string) list Map.t] result));
 
   let combined_result = Result.combine initial_config devices in
   let open NagaDaemon.Types in
