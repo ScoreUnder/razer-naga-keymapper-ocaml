@@ -125,17 +125,17 @@ end
 
 let print_action_map file map =
   let print_op_tuple i (op, v) =
-    if i <> 0 then Printf.fprintf file "; ";
+    if i <> 0 then output_string file "; ";
     Printf.fprintf file "(%s, %s)" (Operator.show_operator op) v
   in
   let print_kv k v =
     Printf.fprintf file "  %d: [" k;
     List.iteri print_op_tuple v;
-    Printf.fprintf file "]\n"
+    output_string file "]\n"
   in
-  Printf.fprintf file "{\n";
+  output_string file "{\n";
   Map.iter print_kv map;
-  Printf.fprintf file "}"
+  output_string file "}"
 
 let init_devices devices =
   ignore @@ NagaDaemon.Types.(Ioctl.(eviocgrab devices.keyboard.fd))
