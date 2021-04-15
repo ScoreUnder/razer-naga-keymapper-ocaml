@@ -18,8 +18,7 @@ module Map = struct
     pp_val fmt v;
     pp_close_box fmt ()
 
-  let pp (pp_val : Format.formatter -> 'a -> unit) (fmt : Format.formatter)
-      (obj : 'a t) =
+  let pp pp_val fmt obj =
     let open Format in
     if obj = empty then pp_print_string fmt "{}"
     else (
