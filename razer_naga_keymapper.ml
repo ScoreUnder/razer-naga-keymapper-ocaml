@@ -69,7 +69,7 @@ module List = struct
   let rec find_map_opt f l =
     match l with
     | x :: xs -> (
-        match f x with Some v as s -> s | None -> find_map_opt f xs)
+        match f x with Some _ as s -> s | None -> find_map_opt f xs)
     | [] -> None
 end
 
