@@ -124,14 +124,17 @@ module NagaDaemon = struct
 end
 
 let print_action_map file map =
+  let print_op_tuple i (op, v) =
+    if i <> 0 then Printf.fprintf file "; ";
+    Printf.fprintf file "(%s, %s)" (Operator.show_operator op) v
+  in
+  let print_kv k v =
+    Printf.fprintf file "  %d: [" k;
+    List.iteri print_op_tuple v;
+    Printf.fprintf file "]\n"
+  in
   Printf.fprintf file "{\n";
-  map
-  |> Map.iter (fun k l ->
-         Printf.fprintf file "  %d: [" k;
-         l
-         |> List.iter (fun (op, v) ->
-                Printf.fprintf file "(%s, %s); " (Operator.show_operator op) v);
-         Printf.fprintf file "]\n");
+  Map.iter print_kv map;
   Printf.fprintf file "}"
 
 let init_devices devices =
