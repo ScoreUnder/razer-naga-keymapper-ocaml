@@ -83,17 +83,27 @@ let init_devices devices =
   ignore @@ NagaDaemon.Types.(Ioctl.(eviocgrab devices.keyboard.fd))
 
 let rec run devices config state =
-  ignore (run, config, state);
+  ignore (config, state);
   let open NagaDaemon.Types in
-  match
-    Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
-  with
-  | ls, _, _ ->
-      (if List.mem devices.keyboard.fd ls then
-       let size = 0x18 in
-       let buf = Bytes.create (size * 64) in
-       ignore @@ Unix.read devices.keyboard.fd buf 0 (Bytes.length buf));
-      if List.mem devices.pointer.fd ls then ()
+  let fds =
+    if IntMap.mem 13 config || IntMap.mem 14 config then
+      [ devices.keyboard.fd; devices.pointer.fd ]
+    else [ devices.keyboard.fd ]
+  in
+  (match Unix.select fds [] [] (-1.0) with
+  | fd :: _, _, _ ->
+      let evts = Input.read_some_input_events fd in
+      (*print_endline @@ string_of_int @@ Array.length evts;*)
+      Array.iter
+        (fun (evt : Input.input_event) ->
+          (*let evt = Input.read_one_input_event fd in*)
+          match evt.evtype with
+          | EV_SYN -> ()
+          | EV_REL (_, _) -> ()
+          | _ -> print_endline @@ Input.show_input_event evt)
+        evts
+  | _ -> ());
+  run devices config state
 
 let () =
   let initial_config =
