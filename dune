@@ -1,6 +1,6 @@
 (executable
  (name razer_naga_keymapper)
- (modules operator parser ioctl razer_naga_keymapper)
+ (modules myLib operator parser ioctl razer_naga_keymapper)
  (libraries gen unix)
  (foreign_stubs
   (language c)
