@@ -29,8 +29,7 @@ module Map = struct
         ~pp_sep:(fun f () ->
           pp_print_char f ',';
           pp_print_space f ())
-        (pp_kv pp_val)
-        fmt
+        (pp_kv pp_val) fmt
       @@ to_seq obj;
       pp_print_break fmt 0 (-2);
       pp_print_char fmt '}';
