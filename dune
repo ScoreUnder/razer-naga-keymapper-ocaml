@@ -14,5 +14,8 @@
 
 (env
  (release
+  (flags
+   (-cc cc -ccopt -s -ccopt -ffunction-sections -ccopt -fdata-sections -ccopt -Wl,--gc-sections))
+  (ocamlc_flags ())
   (ocamlopt_flags
-   (:standard -O3 -unbox-closures -unbox-closures-factor 20 -rounds 6))))
+   (-O3 -unbox-closures -unbox-closures-factor 20 -rounds 6 -compact))))
