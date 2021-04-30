@@ -100,15 +100,16 @@ end
 let () =
   let config_path =
     match Sys.argv with
-    | [|_; filename|] -> filename
-    | [|_|] -> NagaDaemon.config_path
-    | _ -> prerr_endline "Expected 1 argument (config file path) or none."; exit 1;
+    | [| _; filename |] -> filename
+    | [| _ |] -> NagaDaemon.config_path
+    | _ ->
+        prerr_endline "Expected 1 argument (config file path) or none.";
+        exit 1
   in
   let initial_keymap =
     KeyMap.load config_path
     |> Result.map_error (fun err ->
-           Execution.pp_keymap_load_failure Format.str_formatter
-             config_path err;
+           Execution.pp_keymap_load_failure Format.str_formatter config_path err;
            Format.flush_str_formatter ())
   in
   let devices =

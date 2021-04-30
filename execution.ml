@@ -7,7 +7,7 @@ let pp_keymap_load_failure fmt path err =
     Format.pp_print_string path Parser.pp_error_list err
 
 let fork_and_run cmd =
-  Unix.(create_process "/bin/sh" [|"/bin/sh"; "-c"; cmd|] stdin stdout stderr)
+  Unix.(create_process "/bin/sh" [| "/bin/sh"; "-c"; cmd |] stdin stdout stderr)
   |> ignore
 
 let run_action dpy (keymap, state) = function
