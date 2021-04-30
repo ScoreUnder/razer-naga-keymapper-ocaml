@@ -9,7 +9,7 @@ type operator =
   | Position
   | Delay
   | Media
-  | Toggle
+  | Toggle of int
 [@@deriving show { with_path = false }]
 
 let of_string err = function
@@ -23,5 +23,5 @@ let of_string err = function
   | "position" -> Ok Position (* + replace commas with spaces in line *)
   | "delay" -> Ok Delay
   | "media" -> Ok Media
-  | "toggle" -> Ok Toggle
+  | "toggle" -> Ok (Toggle 0)
   | bad -> Error (err bad)

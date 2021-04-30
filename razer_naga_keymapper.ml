@@ -64,17 +64,20 @@ module NagaDaemon = struct
   let action_for_event (keymap : KeyMap.t) ev =
     let open Input in
     match ev.evtype with
-    | EV_KEY (k, PRESS) -> IntMap.find_opt k keymap
+    | EV_KEY (k, p) ->
+      let offset_key = if k >= 275 then k - 262 else k - 1 in
+      IntMap.find_opt offset_key keymap |> Option.map (fun v -> (v, p))
     | _ -> None
 
   let rec process_events keymap state wait_for_more = function
     | ev :: evs ->
         let action = action_for_event keymap ev in
-        let next_keymap =
+        let next_keymap, next_state =
           action
-          |> Option.fold ~none:keymap ~some:(Execution.run_actions keymap)
+          |> Option.fold ~none:(keymap, state) ~some:(fun (acts, presstype) ->
+                 Execution.run_actions (keymap, state) presstype acts)
         in
-        process_events next_keymap state wait_for_more evs
+        process_events next_keymap next_state wait_for_more evs
     | [] -> wait_for_more (process_events keymap state)
 
   let rec wait_for_events devices process_ev =
