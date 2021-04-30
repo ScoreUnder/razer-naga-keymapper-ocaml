@@ -6,14 +6,9 @@ let pp_keymap_load_failure fmt path err =
   Format.fprintf fmt "Could not parse keymap at \"%a\":@\n%a"
     Format.pp_print_string path Parser.pp_error_list err
 
-let system cmd =
-  print_endline cmd;
-  Unix.system cmd
-
 let fork_and_run cmd =
-  if Unix.fork () = 0 then (
-    ignore @@ system cmd;
-    Unix._exit 0)
+  Unix.(create_process "/bin/sh" [|"/bin/sh"; "-c"; cmd|] stdin stdout stderr)
+  |> ignore
 
 let run_action dpy (keymap, state) = function
   | Chmap, path, PRESS ->
