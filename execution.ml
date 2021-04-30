@@ -35,18 +35,6 @@ let run_action dpy (keymap, state) = function
   | Click, mousebtn, presstype ->
       X11.click dpy presstype mousebtn;
       (keymap, state)
-  | Workspace, name, PRESS ->
-      "xdotool set_desktop -- " ^ name |> system |> ignore;
-      (keymap, state)
-  | WorkspaceR, name, PRESS ->
-      "xdotool set_desktop --relative -- " ^ name |> system |> ignore;
-      (keymap, state)
-  | Position, pos, PRESS ->
-      "xdotool mousemove -- " ^ pos |> system |> ignore;
-      (keymap, state)
-  | Media, key, presstype ->
-      X11.press_key dpy presstype ("XF86" ^ key);
-      (keymap, state)
   | Delay, amt, presstype ->
       Unix.sleepf @@ (Float.of_string amt /. 1000.);
       (keymap, state)
