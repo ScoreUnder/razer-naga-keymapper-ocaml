@@ -1,6 +1,17 @@
-# faiwjrefpoij
-1 - click = dasf
-5- workspace = 5
-1 - click = adfdok
-# fds- t4i0 = g9er
-#0 - aclick = fadks
+# Top row: [workspace left] [win] [workspace right]
+1 - run = i3-msg workspace prev_on_output
+2 - key = super
+3 - run = i3-msg workspace next_on_output
+
+# Middle row: [back] [forward] [close tab]
+4 - click = 8
+5 - click = 9
+6 - key = ctrl+F4
+
+# Middle-bottom row: [tab left] [tab right] [reopen tab]
+7 - key = ctrl+shift+Tab
+8 - key = ctrl+Tab
+9 - key = ctrl+shift+t
+
+# Keymap changes
+11 - run = notify-send -i dialog-information "Current keymap" "Using web browser keymap"
