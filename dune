@@ -1,6 +1,14 @@
 (executable
  (name razer_naga_keymapper)
- (modules myLib operator parser ioctl input razer_naga_keymapper)
+ (modules
+  myLib
+  operator
+  parser
+  keyMap
+  execution
+  ioctl
+  input
+  razer_naga_keymapper)
  (libraries gen unix)
  (foreign_stubs
   (language c)
@@ -9,13 +17,22 @@
   (pps ppx_deriving.show))
  (modes native byte_complete)
  (flags
-  (:standard -principal))
+  (:standard -principal -rectypes))
  (promote (until-clean)))
 
 (env
  (release
   (flags
-   (-cc cc -ccopt -s -ccopt -ffunction-sections -ccopt -fdata-sections -ccopt -Wl,--gc-sections))
+   (-cc
+    cc
+    -ccopt
+    -s
+    -ccopt
+    -ffunction-sections
+    -ccopt
+    -fdata-sections
+    -ccopt
+    -Wl,--gc-sections))
   (ocamlc_flags ())
   (ocamlopt_flags
    (-O3 -unbox-closures -unbox-closures-factor 20 -rounds 6 -compact))))

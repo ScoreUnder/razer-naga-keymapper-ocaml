@@ -1,14 +1,5 @@
 open MyLib
 
-let collect_result_enum_rev e =
-  Gen.fold
-    (fun acc v ->
-      match acc with
-      | Ok lst -> (
-          match v with Ok v -> Ok (v :: lst) | Error e -> Error [ e ])
-      | Error lst -> Error (match v with Ok _ -> lst | Error v -> v :: lst))
-    (Ok []) e
-
 module NagaDaemon = struct
   let devices =
     let dev_prefix = "/dev/input/by-id/usb-Razer_" in
@@ -67,48 +58,49 @@ module NagaDaemon = struct
       Types.dev_pair option =
     devices |> List.find_map_opt open_if_exists
 
-  let load_conf path =
-    Gen.(
-      IO.with_lines path (fun lines ->
-          lines
-          |> mapi Parser.parse_conf_line
-          |> filter_map (fun x -> x)
-          |> collect_result_enum_rev
-          |> Result.map_both
-               (fun x -> x |> of_list |> group_by_rev fst snd)
-               List.rev))
+  let init_devices devices =
+    ignore @@ Types.(Ioctl.(eviocgrab devices.keyboard.fd))
+
+  let action_for_event (keymap : KeyMap.t) ev =
+    let open Input in
+    match ev.evtype with
+    | EV_KEY (k, PRESS) -> IntMap.find_opt k keymap
+    | _ -> None
+
+  let rec process_events keymap state wait_for_more = function
+    | ev :: evs ->
+        let action = action_for_event keymap ev in
+        let next_keymap =
+          action
+          |> Option.fold ~none:keymap ~some:(Execution.run_actions keymap)
+        in
+        process_events next_keymap state wait_for_more evs
+    | [] -> wait_for_more (process_events keymap state)
+
+  let rec wait_for_events devices process_ev =
+    let open Types in
+    match
+      Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
+    with
+    | fd :: _, _, _ ->
+        Input.read_some_input_events fd
+        |> Array.to_list
+        |> process_ev (wait_for_events devices)
+    | _, _, exfd :: _ -> failwith "Exceptional condition in file descriptor?"
+    | _ -> wait_for_events devices process_ev
+
+  let run devices config state =
+    init_devices devices;
+    wait_for_events devices (process_events config state)
 end
 
-let init_devices devices =
-  ignore @@ NagaDaemon.Types.(Ioctl.(eviocgrab devices.keyboard.fd))
-
-let rec run devices config state =
-  ignore (config, state);
-  let open NagaDaemon.Types in
-  let fds =
-    if IntMap.mem 13 config || IntMap.mem 14 config then
-      [ devices.keyboard.fd; devices.pointer.fd ]
-    else [ devices.keyboard.fd ]
-  in
-  (match Unix.select fds [] [] (-1.0) with
-  | fd :: _, _, _ ->
-      let evts = Input.read_some_input_events fd in
-      (*print_endline @@ string_of_int @@ Array.length evts;*)
-      Array.iter
-        (fun (evt : Input.input_event) ->
-          (*let evt = Input.read_one_input_event fd in*)
-          match evt.evtype with
-          | EV_SYN -> ()
-          | EV_REL (_, _) -> ()
-          | _ -> print_endline @@ Input.show_input_event evt)
-        evts
-  | _ -> ());
-  run devices config state
-
 let () =
-  let initial_config =
-    NagaDaemon.(load_conf config_path)
-    |> Result.map_error [%derive.show: Parser.parse_error list]
+  let initial_keymap =
+    KeyMap.load NagaDaemon.config_path
+    |> Result.map_error (fun err ->
+           Execution.pp_keymap_load_failure Format.str_formatter
+             NagaDaemon.config_path err;
+           Format.flush_str_formatter ())
   in
   let devices =
     NagaDaemon.(find_razer_device devices)
@@ -116,19 +108,16 @@ let () =
          "No naga devices found or you don't have permission to access them."
   in
 
-  initial_config
-  |> Result.iter (fun result ->
-         print_endline
-           ([%derive.show: (Operator.operator * string) list IntMap.t] result));
+  initial_keymap
+  |> Result.iter (fun result -> print_endline @@ KeyMap.show result);
 
-  let combined_result = Result.combine initial_config devices in
+  let combined_result = Result.combine initial_keymap devices in
   let open NagaDaemon.Types in
   combined_result
-  |> Result.iter (fun (initial_config, devices) ->
+  |> Result.iter (fun (initial_keymap, devices) ->
          Printf.printf "Reading from: %s and %s\n%!" devices.keyboard.path
            devices.pointer.path;
-         init_devices devices;
-         run devices initial_config IntMap.empty);
+         NagaDaemon.run devices initial_keymap IntMap.empty);
 
   devices
   |> Result.iter (fun devices ->

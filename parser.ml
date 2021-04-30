@@ -9,6 +9,8 @@ type parse_error =
   | BadNumber of int * string
 [@@deriving show { with_path = false }]
 
+type error_list = parse_error list [@@deriving show { with_path = false }]
+
 let parse_conf_action num line =
   match String.split_once ~chr:'=' line with
   | None -> Error (MissingEquals num)

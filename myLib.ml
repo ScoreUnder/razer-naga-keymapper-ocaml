@@ -89,3 +89,12 @@ module List = struct
         match f x with Some _ as s -> s | None -> find_map_opt f xs)
     | [] -> None
 end
+
+let collect_result_enum_rev e =
+  Gen.fold
+    (fun acc v ->
+      match acc with
+      | Ok lst -> (
+          match v with Ok v -> Ok (v :: lst) | Error e -> Error [ e ])
+      | Error lst -> Error (match v with Ok _ -> lst | Error v -> v :: lst))
+    (Ok []) e
