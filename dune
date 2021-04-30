@@ -5,19 +5,20 @@
   operator
   parser
   keyMap
+  input
+  x11
   execution
   ioctl
-  input
   razer_naga_keymapper)
  (libraries gen unix)
  (foreign_stubs
   (language c)
-  (names ioctl_stub input_stub))
+  (names ioctl_stub input_stub x11_stub))
  (preprocess
   (pps ppx_deriving.show))
  (modes native byte_complete)
  (flags
-  (:standard -principal -rectypes))
+  (:standard -principal -rectypes -cclib -lX11 -cclib -lXtst))
  (promote (until-clean)))
 
 (env

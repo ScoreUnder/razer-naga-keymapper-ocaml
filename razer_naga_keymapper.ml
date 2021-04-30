@@ -65,22 +65,22 @@ module NagaDaemon = struct
     let open Input in
     match ev.evtype with
     | EV_KEY (k, p) ->
-      let offset_key = if k >= 275 then k - 262 else k - 1 in
-      IntMap.find_opt offset_key keymap |> Option.map (fun v -> (v, p))
+        let offset_key = if k >= 275 then k - 262 else k - 1 in
+        IntMap.find_opt offset_key keymap |> Option.map (fun v -> (v, p))
     | _ -> None
 
-  let rec process_events keymap state wait_for_more = function
+  let rec process_events dpy keymap state wait_for_more = function
     | ev :: evs ->
         let action = action_for_event keymap ev in
         let next_keymap, next_state =
           action
           |> Option.fold ~none:(keymap, state) ~some:(fun (acts, presstype) ->
-                 Execution.run_actions (keymap, state) presstype acts)
+                 Execution.run_actions dpy (keymap, state) presstype acts)
         in
-        process_events next_keymap next_state wait_for_more evs
-    | [] -> wait_for_more (process_events keymap state)
+        process_events dpy next_keymap next_state wait_for_more evs
+    | [] -> wait_for_more (process_events dpy keymap state)
 
-  let rec wait_for_events devices process_ev =
+  let rec wait_for_events devices dpy process_ev =
     let open Types in
     match
       Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
@@ -88,13 +88,13 @@ module NagaDaemon = struct
     | fd :: _, _, _ ->
         Input.read_some_input_events fd
         |> Array.to_list
-        |> process_ev (wait_for_events devices)
+        |> process_ev (wait_for_events devices dpy)
     | _, _, exfd :: _ -> failwith "Exceptional condition in file descriptor?"
-    | _ -> wait_for_events devices process_ev
+    | _ -> wait_for_events devices dpy process_ev
 
-  let run devices config state =
+  let run devices dpy config state =
     init_devices devices;
-    wait_for_events devices (process_events config state)
+    wait_for_events devices dpy (process_events dpy config state)
 end
 
 let () =
@@ -110,17 +110,22 @@ let () =
     |> Result.of_option_d
          "No naga devices found or you don't have permission to access them."
   in
+  let xdpy =
+    X11.open_display () |> Result.of_option_d "Could not open display"
+  in
 
   initial_keymap
   |> Result.iter (fun result -> print_endline @@ KeyMap.show result);
 
-  let combined_result = Result.combine initial_keymap devices in
+  let combined_result =
+    Result.combine initial_keymap devices |> Result.combine xdpy
+  in
   let open NagaDaemon.Types in
   combined_result
-  |> Result.iter (fun (initial_keymap, devices) ->
+  |> Result.iter (fun (dpy, (initial_keymap, devices)) ->
          Printf.printf "Reading from: %s and %s\n%!" devices.keyboard.path
            devices.pointer.path;
-         NagaDaemon.run devices initial_keymap IntMap.empty);
+         NagaDaemon.run devices dpy initial_keymap IntMap.empty);
 
   devices
   |> Result.iter (fun devices ->
