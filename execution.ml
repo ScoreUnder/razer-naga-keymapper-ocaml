@@ -8,7 +8,7 @@ let pp_keymap_load_failure fmt path err =
 
 let fork_and_run cmd =
   Unix.(create_process "/bin/sh" [| "/bin/sh"; "-c"; cmd |] stdin stdout stderr)
-  |> ignore
+  |> ProcessReaper.register_for_reaping
 
 let run_action dpy (keymap, state) = function
   | Chmap, path, PRESS ->

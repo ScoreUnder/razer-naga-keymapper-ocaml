@@ -7,6 +7,7 @@
   keyMap
   input
   x11
+  processReaper
   execution
   ioctl
   razer_naga_keymapper)

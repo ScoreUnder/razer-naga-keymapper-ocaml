@@ -83,7 +83,8 @@ module NagaDaemon = struct
   let rec wait_for_events devices dpy process_ev =
     let open Types in
     match
-      Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
+      try Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
+      with Unix.Unix_error (Unix.EINTR, _, _) -> ([], [], [])
     with
     | fd :: _, _, _ ->
         Input.read_some_input_events fd
@@ -94,6 +95,7 @@ module NagaDaemon = struct
 
   let run devices dpy config state =
     init_devices devices;
+    ProcessReaper.setup ();
     wait_for_events devices dpy (process_events dpy config state)
 end
 

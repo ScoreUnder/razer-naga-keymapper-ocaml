@@ -82,6 +82,8 @@ module IntMap = struct
       pp_close_box fmt ())
 end
 
+module IntSet = Set.Make (Int)
+
 module Gen = struct
   include Gen
 
