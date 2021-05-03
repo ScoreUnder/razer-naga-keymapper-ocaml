@@ -15,9 +15,9 @@ val pp_error_list : Format.formatter -> error_list -> unit
 val show_error_list : error_list -> string
 
 val parse_conf_action :
-  int -> string -> (Operator.operator * string, parse_error) result
+  int -> string -> (Operator.t * string, parse_error) result
 
 val parse_conf_line :
   int ->
   string ->
-  (int * (Operator.operator * string), parse_error) result option
+  (int * (Operator.t * string), parse_error) result option

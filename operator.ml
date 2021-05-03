@@ -1,4 +1,4 @@
-type operator = Chmap | Key | Run | Run2 | Click | Delay | Toggle of int
+type t = Chmap | Key | Run | Run2 | Click | Delay | Toggle of int
 [@@deriving show { with_path = false }]
 
 let of_string err = function

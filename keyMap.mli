@@ -1,4 +1,4 @@
-type t = (Operator.operator * string) list MyLib.IntMap.t
+type t = (Operator.t * string) list MyLib.IntMap.t
 
 val show : t -> string
 

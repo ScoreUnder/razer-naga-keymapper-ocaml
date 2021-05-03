@@ -1,6 +1,6 @@
 open MyLib
 
-type t = (Operator.operator * string) list IntMap.t [@@deriving show]
+type t = (Operator.t * string) list IntMap.t [@@deriving show]
 
 let renumber_toggles lst =
   let open Operator in
