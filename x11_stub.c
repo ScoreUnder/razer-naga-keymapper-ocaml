@@ -64,6 +64,7 @@ CAMLprim value caml_xopen_display() {
     if (dpy == NULL) {
         result = Val_none;
     } else {
+        // NOLINTNEXTLINE(bugprone-sizeof-expression)
         dpy_r = caml_alloc_custom(&x_display_custom, sizeof dpy, 0, 1);
         *(Display**) Data_custom_val(dpy_r) = dpy;
         result = caml_alloc_some(dpy_r);
