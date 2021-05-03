@@ -6,12 +6,12 @@
 # Middle row: [back] [forward] [close tab]
 4 - click = 8
 5 - click = 9
-6 - key = ctrl+F4
+6 - key = ctrl+shift+t
 
 # Middle-bottom row: [tab left] [tab right] [reopen tab]
 7 - key = ctrl+shift+Tab
 8 - key = ctrl+Tab
-9 - key = ctrl+shift+t
+9 - key = ctrl+F4
 
 # Keymap changes
 11 - run = notify-send -i dialog-information "Current keymap" "Using web browser keymap"
