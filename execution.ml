@@ -30,7 +30,7 @@ let run_action dpy (keymap, state) = function
   | Click, mousebtn, presstype ->
       X11.click dpy presstype mousebtn;
       (keymap, state)
-  | Delay, amt, presstype ->
+  | Delay, amt, (PRESS|RELEASE) ->
       Unix.sleepf @@ (Float.of_string amt /. 1000.);
       (keymap, state)
   | Toggle n, key, PRESS ->
