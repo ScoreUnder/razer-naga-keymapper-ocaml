@@ -90,7 +90,7 @@ module NagaDaemon = struct
         Input.read_some_input_events fd
         |> Array.to_list
         |> process_ev (wait_for_events devices dpy)
-    | _, _, exfd :: _ -> failwith "Exceptional condition in file descriptor?"
+    | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"
     | _ -> wait_for_events devices dpy process_ev
 
   let run devices dpy config state =
