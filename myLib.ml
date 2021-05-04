@@ -1,8 +1,6 @@
 module Result = struct
   include Result
 
-  let pull_snd (a, b) = map (fun v -> (a, v)) b
-
   let catch f x = try Ok (f x) with e -> Error e
 
   (** [combine result1 result2] joins a pair of results, joining the error
@@ -52,15 +50,6 @@ module String = struct
            (sub str 0 ind, sub str after_pos (String.length str - after_pos)))
 
   let starts_with ~chr str = if str = "" then false else str.[0] == chr
-
-  let eq_no_case a b =
-    let len = String.length a in
-    let rec cmp_chrs n =
-      if n = len then true
-      else if a.[n] <> b.[n] then false
-      else cmp_chrs (succ n)
-    in
-    len = String.length b && cmp_chrs 0
 end
 
 module IntMap = Map.Make (Int)
@@ -73,10 +62,5 @@ module List = struct
     match l with
     | x :: xs -> (
         match f x with Some _ as s -> s | None -> find_map_opt f xs)
-    | [] -> None
-
-  let rec assoc_opt_eq eq v = function
-    | (x, y) :: _ when eq x v -> Some y
-    | _ :: xs -> assoc_opt_eq eq v xs
     | [] -> None
 end
