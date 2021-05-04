@@ -27,6 +27,9 @@ let run_action dpy presstype ((keymap, state) as vars) = function
       X11.press_key dpy PRESS keysyms;
       X11.press_key dpy RELEASE keysyms;
       vars
+  | Type keysyms ->
+      X11.type_seq dpy keysyms;
+      vars
   | Run cmd ->
       cmd |> fork_and_run;
       vars

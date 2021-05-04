@@ -67,3 +67,12 @@ let press_key dpy presstype key =
 let click dpy presstype key =
   fake_button dpy key presstype |> ignore;
   flush dpy |> ignore
+
+let type_seq dpy key =
+  try
+    keysyms_to_keycodes dpy key
+    |> List.iter (fun k ->
+           fake_key dpy k PRESS |> ignore;
+           fake_key dpy k RELEASE |> ignore);
+    flush dpy |> ignore
+  with Unbound_key k -> prerr_endline @@ "Unbound key " ^ k

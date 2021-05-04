@@ -4,6 +4,7 @@ type t =
   | Chmap of string
   | Key of keys
   | KeyTap of keys
+  | Type of keys
   | Run of string
   | Click of int
   | Delay of float
@@ -16,6 +17,7 @@ let default_activation =
   | Chmap _ -> [ PRESS ]
   | Key _ -> [ PRESS; RELEASE; REPEAT ]
   | KeyTap _ -> [ PRESS ]
+  | Type _ -> [ PRESS ]
   | Run _ -> [ PRESS ]
   | Click _ -> [ PRESS; RELEASE; REPEAT ]
   | Delay _ -> [ PRESS; RELEASE ]

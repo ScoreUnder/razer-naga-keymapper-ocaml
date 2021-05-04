@@ -11,7 +11,7 @@
   execution
   ioctl
   razer_naga_keymapper)
- (libraries gen unix)
+ (libraries gen unix uutf)
  (foreign_stubs
   (language c)
   (names ioctl_stub input_stub x11_stub))

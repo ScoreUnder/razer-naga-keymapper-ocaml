@@ -9,6 +9,7 @@ type parse_error =
   | BadNumber of int * string
   | BadKeyName of int * string
   | BadKeypressType of int * string
+  | BadUnicode of int * string
 [@@deriving show { with_path = false }]
 
 type error_list = parse_error list [@@deriving show { with_path = false }]
@@ -17,12 +18,35 @@ let parse_syms_then f line_num syms =
   try Ok (f (X11.parse_keysyms syms))
   with X11.Bad_key_name name -> Error [ BadKeyName (line_num, name) ]
 
+let str_to_charcodes line_num s =
+  let decoder = Uutf.decoder ~encoding:`UTF_8 (`String s) in
+  let rec consume acc =
+    match Uutf.decode decoder with
+    | `Uchar u -> consume (Ok u :: acc)
+    | `End -> acc
+    | `Malformed b -> consume (Error (BadUnicode (line_num, b)) :: acc)
+    | `Await -> failwith "Uutf expects manual supply?"
+  in
+  Result.combine_lst (List.rev (consume []))
+
+let charcodes_to_keys num lst =
+  lst
+  |> List.map (fun ch ->
+         let keyname = ch |> Uchar.to_int |> Printf.sprintf "U%04x" in
+         try Ok (keyname, X11.parse_keysym keyname)
+         with X11.Bad_key_name name -> Error (BadKeyName (num, name)))
+  |> Result.combine_lst
+
+let str_to_keys num str =
+  Result.bind (str_to_charcodes num str) (charcodes_to_keys num)
+
 let operator_of_string line_num cmd =
   let open Operator in
   function
   | "chmap" -> Ok (Chmap cmd)
   | "key" -> parse_syms_then (fun s -> Key s) line_num cmd
   | "keytap" -> parse_syms_then (fun s -> KeyTap s) line_num cmd
+  | "type" -> str_to_keys line_num cmd |> Result.map (fun r -> Type r)
   | "run" -> Ok (Run cmd)
   | "click" ->
       int_of_string_opt cmd
