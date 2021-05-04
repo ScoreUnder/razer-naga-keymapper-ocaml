@@ -89,8 +89,7 @@ let parse_conf_line num line =
       (match String.split_once ~chr:'-' trimmed with
       | None -> Error [ MissingHyphen num ]
       | Some (left, right) ->
-          let ( and* ) = Result.combine_tup in
-          let ( let+ ) = Fun.flip Result.map in
+          let open Result.Syntax in
           let left = String.trim left in
           let keystr, press_str =
             left |> String.split_once ~chr:' '

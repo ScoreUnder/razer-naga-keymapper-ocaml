@@ -110,29 +110,32 @@ let () =
     KeyMap.load config_path
     |> Result.map_error (fun err ->
            Execution.pp_keymap_load_failure Format.str_formatter config_path err;
-           Format.flush_str_formatter ())
+           [ Format.flush_str_formatter () ])
   in
   let devices =
     NagaDaemon.(find_razer_device devices)
     |> Result.of_option_d
-         "No naga devices found or you don't have permission to access them."
+         [
+           "No naga devices found or you don't have permission to access them.";
+         ]
   in
   let xdpy =
-    X11.open_display () |> Result.of_option_d "Could not open display"
+    X11.open_display () |> Result.of_option_d [ "Could not open display" ]
   in
 
   initial_keymap
   |> Result.iter (fun result -> print_endline @@ KeyMap.show result);
 
-  let combined_result =
-    Result.combine initial_keymap devices |> Result.combine xdpy
-  in
   let open NagaDaemon.Types in
-  combined_result
-  |> Result.iter (fun (dpy, (initial_keymap, devices)) ->
-         Printf.printf "Reading from: %s and %s\n%!" devices.keyboard.path
-           devices.pointer.path;
-         NagaDaemon.run devices dpy initial_keymap IntMap.empty);
+  let combined_result =
+    let open Result.Syntax in
+    let+ dpy = xdpy
+    and* initial_keymap = initial_keymap
+    and* devices = devices in
+    Printf.printf "Reading from: %s and %s\n%!" devices.keyboard.path
+      devices.pointer.path;
+    NagaDaemon.run devices dpy initial_keymap IntMap.empty
+  in
 
   devices
   |> Result.iter (fun devices ->
@@ -141,5 +144,5 @@ let () =
 
   combined_result
   |> Result.iter_error (fun err ->
-         prerr_endline err;
+         List.iter prerr_endline err;
          exit 1)

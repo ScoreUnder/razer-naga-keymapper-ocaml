@@ -38,6 +38,12 @@ module Result = struct
   let map_both o e r = match r with Ok v -> Ok (o v) | Error v -> Error (e v)
 
   let list_rev r = map_both List.rev List.rev r
+
+  module Syntax = struct
+    let ( let+ ) a b = map b a
+
+    let ( and* ) a b = combine_tup a b
+  end
 end
 
 module String = struct
