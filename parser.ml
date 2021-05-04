@@ -27,7 +27,7 @@ let str_to_charcodes line_num s =
     | `Malformed b -> consume (Error (BadUnicode (line_num, b)) :: acc)
     | `Await -> failwith "Uutf expects manual supply?"
   in
-  Result.combine_lst (List.rev (consume []))
+  Result.combine_lst_rev (consume [])
 
 let charcodes_to_keys num lst =
   lst
@@ -35,7 +35,8 @@ let charcodes_to_keys num lst =
          let keyname = ch |> Uchar.to_int |> Printf.sprintf "U%04x" in
          try Ok (keyname, X11.parse_keysym keyname)
          with X11.Bad_key_name name -> Error (BadKeyName (num, name)))
-  |> Result.combine_lst
+  |> Result.combine_lst_rev
+  |> Result.list_rev
 
 let str_to_keys num str =
   Result.bind (str_to_charcodes num str) (charcodes_to_keys num)
@@ -78,7 +79,7 @@ let parse_keypress_types num str =
   |> List.filter_map (fun s ->
          if s = "" then None
          else Some (parse_keypress_type num (String.uppercase_ascii s)))
-  |> Result.combine_lst
+  |> Result.combine_lst_rev
 
 let parse_conf_line num line =
   let num = succ num (* make lines 1-indexed *) in

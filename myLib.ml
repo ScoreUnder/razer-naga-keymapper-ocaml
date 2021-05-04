@@ -15,7 +15,7 @@ module Result = struct
     | Error era -> (
         match b with Ok _ -> Error era | Error erb -> Error (era ^ "\n" ^ erb))
 
-  let combine_lst l =
+  let combine_lst_rev l =
     let rec aux_err acc = function
       | Ok _ :: xs -> aux_err acc xs
       | Error x :: xs -> aux_err (x :: acc) xs
@@ -38,6 +38,8 @@ module Result = struct
   let of_option_d d o = match o with Some x -> Ok x | None -> Error d
 
   let map_both o e r = match r with Ok v -> Ok (o v) | Error v -> Error (e v)
+
+  let list_rev r = map_both List.rev List.rev r
 end
 
 module String = struct
