@@ -1,5 +1,15 @@
 (executable
  (name razer_naga_keymapper)
+ (modules razer_naga_keymapper)
+ (libraries unix libs)
+ (modes native byte_complete)
+ (flags
+  (:standard -cc cc -rectypes))
+ (promote (until-clean)))
+
+(library
+ (name libs)
+ (wrapped false)
  (modules
   myLib
   x11
@@ -9,24 +19,22 @@
   keyMap
   processReaper
   execution
-  ioctl
-  razer_naga_keymapper)
+  ioctl)
  (libraries gen unix uutf)
  (foreign_stubs
   (language c)
   (names ioctl_stub input_stub x11_stub))
- (preprocess
-  (pps ppx_deriving.show))
- (modes native byte_complete)
  (flags
-  (:standard -principal -rectypes -cclib -lX11 -cclib -lXtst))
- (promote (until-clean)))
+  (:standard -cclib -lX11 -cclib -lXtst))
+ (preprocess
+  (pps ppx_deriving.show)))
 
 (env
  (release
   (flags
-   (-cc
-    cc
+   (-principal
+    -cc
+    "cc -shared"
     -ccopt
     -s
     -ccopt
