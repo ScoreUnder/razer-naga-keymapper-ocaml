@@ -10,7 +10,7 @@ let fork_and_run cmd =
   Unix.(create_process "/bin/sh" [| "/bin/sh"; "-c"; cmd |] stdin stdout stderr)
   |> ProcessReaper.register_for_reaping
 
-let run_action dpy ((keymap, state) as vars) presstype = function
+let run_action dpy presstype ((keymap, state) as vars) = function
   | Chmap path -> (
       match KeyMap.load path with
       | Ok next_keymap ->
@@ -42,7 +42,5 @@ let run_action dpy ((keymap, state) as vars) presstype = function
       let next_state = IntMap.add n (not is_pressed) state in
       (keymap, next_state)
 
-let rec run_actions dpy vars presstype = function
-  | act :: xs ->
-      run_actions dpy (run_action dpy vars presstype act) presstype xs
-  | [] -> vars
+let run_actions dpy vars presstype acts =
+  List.fold_left (run_action dpy presstype) vars acts
