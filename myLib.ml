@@ -32,9 +32,6 @@ module Result = struct
     | Error era as e -> (
         match b with Ok _ -> e | Error erb -> Error (era @ erb))
 
-  (** converts an option into a result, given a default value for the error case *)
-  let of_option_d d o = match o with Some x -> Ok x | None -> Error d
-
   let map_both o e r = match r with Ok v -> Ok (o v) | Error v -> Error (e v)
 
   let list_rev r = map_both List.rev List.rev r

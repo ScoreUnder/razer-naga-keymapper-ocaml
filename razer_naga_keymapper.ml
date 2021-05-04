@@ -114,13 +114,15 @@ let () =
   in
   let devices =
     NagaDaemon.(find_razer_device devices)
-    |> Result.of_option_d
-         [
-           "No naga devices found or you don't have permission to access them.";
-         ]
+    |> Option.to_result
+         ~none:
+           [
+             "No naga devices found or you don't have permission to access \
+              them.";
+           ]
   in
   let xdpy =
-    X11.open_display () |> Result.of_option_d [ "Could not open display" ]
+    X11.open_display () |> Option.to_result ~none:[ "Could not open display" ]
   in
 
   initial_keymap
