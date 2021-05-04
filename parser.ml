@@ -13,13 +13,16 @@ type parse_error =
 
 type error_list = parse_error list [@@deriving show { with_path = false }]
 
+let parse_syms_then f line_num syms =
+  try Ok (f (X11.parse_keysyms syms))
+  with X11.Bad_key_name name -> Error [ BadKeyName (line_num, name) ]
+
 let operator_of_string line_num cmd =
   let open Operator in
   function
   | "chmap" -> Ok (Chmap cmd)
-  | "key" -> (
-      try Ok (Key (X11.parse_keysyms cmd))
-      with X11.Bad_key_name name -> Error [ BadKeyName (line_num, name) ])
+  | "key" -> parse_syms_then (fun s -> Key s) line_num cmd
+  | "keytap" -> parse_syms_then (fun s -> KeyTap s) line_num cmd
   | "run" -> Ok (Run cmd)
   | "click" ->
       int_of_string_opt cmd
@@ -29,9 +32,7 @@ let operator_of_string line_num cmd =
       float_of_string_opt cmd
       |> Option.to_result ~none:[ BadNumber (line_num, cmd) ]
       |> Result.map (fun time -> Delay (time /. 1000.))
-  | "toggle" -> (
-      try Ok (Toggle (0, X11.parse_keysyms cmd))
-      with X11.Bad_key_name name -> Error [ BadKeyName (line_num, name) ])
+  | "toggle" -> parse_syms_then (fun s -> Toggle (0, s)) line_num cmd
   | bad -> Error [ UnknownOperation (line_num, bad) ]
 
 let parse_conf_action num line =
