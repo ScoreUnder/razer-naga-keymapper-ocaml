@@ -1,5 +1,3 @@
-open MyLib
-
 type display
 
 external open_display : unit -> display option = "caml_xopen_display"
@@ -37,7 +35,8 @@ let key_aliases =
 let parse_keysym s =
   let s = String.trim s in
   let s =
-    List.assoc_opt_eq String.eq_no_case s key_aliases |> Option.value ~default:s
+    List.assoc_opt (String.lowercase_ascii s) key_aliases
+    |> Option.value ~default:s
   in
   let sym = string_to_keysym s in
   if sym = 0 then try int_of_string s with Failure _ -> raise (Bad_key_name s)
