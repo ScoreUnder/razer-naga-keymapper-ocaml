@@ -11,16 +11,15 @@ let fork_and_run cmd =
   |> ProcessReaper.register_for_reaping
 
 let run_action dpy (keymap, state) = function
-  | Chmap, path, PRESS ->
-      KeyMap.load path
-      |> Result.fold
-           ~ok:(fun next_keymap ->
-             print_endline @@ KeyMap.show next_keymap;
-             (next_keymap, state))
-           ~error:(fun err ->
-             pp_keymap_load_failure Format.err_formatter path err;
-             prerr_newline ();
-             (keymap, state))
+  | Chmap, path, PRESS -> (
+      match KeyMap.load path with
+      | Ok next_keymap ->
+          print_endline @@ KeyMap.show next_keymap;
+          (next_keymap, state)
+      | Error err ->
+          pp_keymap_load_failure Format.err_formatter path err;
+          prerr_newline ();
+          (keymap, state))
   | Key, keyname, presstype ->
       X11.press_key dpy presstype keyname;
       (keymap, state)
