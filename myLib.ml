@@ -32,7 +32,7 @@ module Result = struct
     match a with
     | Ok oka -> ( match b with Ok okb -> Ok (oka, okb) | Error _ as e -> e)
     | Error era as e -> (
-        match b with Ok okb -> e | Error erb -> Error (era @ erb))
+        match b with Ok _ -> e | Error erb -> Error (era @ erb))
 
   (** converts an option into a result, given a default value for the error case *)
   let of_option_d d o = match o with Some x -> Ok x | None -> Error d
