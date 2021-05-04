@@ -66,7 +66,7 @@ module NagaDaemon = struct
     match ev.evtype with
     | EV_KEY (k, p) ->
         let offset_key = if k >= 275 then k - 262 else k - 1 in
-        (KeyMap.find offset_key keymap, p)
+        (KeyMap.find (p, offset_key) keymap, p)
     | _ -> ([], Input.REPEAT)
 
   let rec process_events dpy keymap state wait_for_more = function

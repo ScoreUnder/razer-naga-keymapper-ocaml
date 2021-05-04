@@ -1,6 +1,59 @@
 open MyLib
 
-type t = Operator.t list IntMap.t [@@deriving show]
+module KeyMap = struct
+  include Map.Make (struct
+    type t = Input.keypress * int
+
+    let compare = compare
+  end)
+
+  let find_default def x map = try find x map with Not_found -> def
+
+  let multi_add_rev k v m =
+    let next = v :: find_default [] k m in
+    add k next m
+
+  let pp_key fmt ((keypress, btn) : key) =
+    let open Format in
+    pp_open_box fmt 0;
+    pp_print_char fmt '(';
+    pp_print_cut fmt ();
+    Input.pp_keypress fmt keypress;
+    pp_print_char fmt ',';
+    pp_print_space fmt ();
+    pp_print_int fmt btn;
+    pp_print_cut fmt ();
+    pp_print_char fmt ')';
+    pp_close_box fmt ()
+
+  let pp_kv pp_val fmt (k, v) =
+    let open Format in
+    pp_open_box fmt 0;
+    pp_key fmt k;
+    pp_print_char fmt ':';
+    pp_print_space fmt ();
+    pp_val fmt v;
+    pp_close_box fmt ()
+
+  let pp pp_val fmt obj =
+    let open Format in
+    if obj = empty then pp_print_string fmt "{}"
+    else (
+      pp_open_vbox fmt 2;
+      pp_print_char fmt '{';
+      pp_print_cut fmt ();
+      pp_print_seq
+        ~pp_sep:(fun f () ->
+          pp_print_char f ',';
+          pp_print_space f ())
+        (pp_kv pp_val) fmt
+      @@ to_seq obj;
+      pp_print_break fmt 0 (-2);
+      pp_print_char fmt '}';
+      pp_close_box fmt ())
+end
+
+type t = Operator.t list KeyMap.t [@@deriving show]
 
 let renumber_toggles lst =
   let open Operator in
@@ -11,15 +64,30 @@ let renumber_toggles lst =
   in
   aux 0 [] lst
 
-let load path : (t, Parser.parse_error list) result =
-  Gen.(
-    IO.with_lines path (fun lines ->
-        lines
-        |> mapi Parser.parse_conf_line
-        |> filter_map (fun x -> x)
-        |> collect_result_enum_rev
-        |> Result.map_both
-             (fun x -> x |> renumber_toggles |> of_list |> group_by_rev fst snd)
-             List.rev))
+let of_list_rev : ((Input.keypress list * int) * Operator.t) list -> t =
+  List.fold_left
+    (fun acc ((kps, btn), act) ->
+      List.fold_left
+        (fun acc kp -> KeyMap.multi_add_rev (kp, btn) act acc)
+        acc kps)
+    KeyMap.empty
 
-let find = IntMap.find_default []
+let collect_result_enum_rev e =
+  Gen.fold
+    (fun acc v ->
+      match acc with
+      | Ok lst -> ( match v with Ok v -> Ok (v :: lst) | Error _ as e -> e)
+      | Error lst -> Error (match v with Ok _ -> lst | Error v -> v @ lst))
+    (Ok []) e
+
+let load path : (t, Parser.parse_error list) result =
+  Gen.IO.with_lines path (fun lines ->
+      lines
+      |> Gen.mapi Parser.parse_conf_line
+      |> Gen.filter_map (fun x -> x)
+      |> collect_result_enum_rev
+      |> Result.map_both
+           (fun x -> x |> renumber_toggles |> of_list_rev)
+           List.rev)
+
+let find = KeyMap.find_default []

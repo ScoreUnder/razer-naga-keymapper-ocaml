@@ -15,6 +15,25 @@ module Result = struct
     | Error era -> (
         match b with Ok _ -> Error era | Error erb -> Error (era ^ "\n" ^ erb))
 
+  let combine_lst l =
+    let rec aux_err acc = function
+      | Ok _ :: xs -> aux_err acc xs
+      | Error x :: xs -> aux_err (x :: acc) xs
+      | [] -> Error acc
+    in
+    let rec aux acc = function
+      | Ok x :: xs -> aux (x :: acc) xs
+      | Error x :: xs -> aux_err [ x ] xs
+      | [] -> Ok acc
+    in
+    aux [] l
+
+  let combine_tup a b =
+    match a with
+    | Ok oka -> ( match b with Ok okb -> Ok (oka, okb) | Error _ as e -> e)
+    | Error era as e -> (
+        match b with Ok okb -> e | Error erb -> Error (era @ erb))
+
   (** converts an option into a result, given a default value for the error case *)
   let of_option_d d o = match o with Some x -> Ok x | None -> Error d
 
@@ -42,52 +61,8 @@ module String = struct
     len = String.length b && cmp_chrs 0
 end
 
-module IntMap = struct
-  include Map.Make (Int)
-
-  let find_default def x map = try find x map with Not_found -> def
-
-  let multi_add_rev k v m =
-    let next = v :: find_default [] k m in
-    add k next m
-
-  let pp_key fmt (key : key) = Format.pp_print_int fmt key
-
-  let pp_kv pp_val fmt (k, v) =
-    let open Format in
-    pp_open_box fmt 0;
-    pp_key fmt k;
-    pp_print_char fmt ':';
-    pp_print_space fmt ();
-    pp_val fmt v;
-    pp_close_box fmt ()
-
-  let pp pp_val fmt obj =
-    let open Format in
-    if obj = empty then pp_print_string fmt "{}"
-    else (
-      pp_open_vbox fmt 2;
-      pp_print_char fmt '{';
-      pp_print_cut fmt ();
-      pp_print_seq
-        ~pp_sep:(fun f () ->
-          pp_print_char f ',';
-          pp_print_space f ())
-        (pp_kv pp_val) fmt
-      @@ to_seq obj;
-      pp_print_break fmt 0 (-2);
-      pp_print_char fmt '}';
-      pp_close_box fmt ())
-end
-
+module IntMap = Map.Make (Int)
 module IntSet = Set.Make (Int)
-
-module Gen = struct
-  include Gen
-
-  let group_by_rev kf vf e =
-    fold (fun acc el -> IntMap.multi_add_rev (kf el) (vf el) acc) IntMap.empty e
-end
 
 module List = struct
   include List
@@ -103,12 +78,3 @@ module List = struct
     | _ :: xs -> assoc_opt_eq eq v xs
     | [] -> None
 end
-
-let collect_result_enum_rev e =
-  Gen.fold
-    (fun acc v ->
-      match acc with
-      | Ok lst -> (
-          match v with Ok v -> Ok (v :: lst) | Error e -> Error [ e ])
-      | Error lst -> Error (match v with Ok _ -> lst | Error v -> v :: lst))
-    (Ok []) e

@@ -3,10 +3,10 @@
  (modules
   myLib
   x11
+  input
   operator
   parser
   keyMap
-  input
   processReaper
   execution
   ioctl

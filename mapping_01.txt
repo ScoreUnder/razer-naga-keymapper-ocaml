@@ -1,7 +1,7 @@
 # Top row: [workspace left] [win] [workspace right]
-1 - run = i3-msg workspace prev_on_output
+1 press repeat - run = i3-msg workspace prev_on_output
 2 - key = super
-3 - run = i3-msg workspace next_on_output
+3 press repeat - run = i3-msg workspace next_on_output
 
 # Middle row: [back] [forward] [close tab]
 4 - click = 8
@@ -14,4 +14,6 @@
 9 - key = ctrl+F4
 
 # Keymap changes
+# The first one just reloads this mapping for quick testing
+10 - chmap = mapping_01.txt
 11 - run = notify-send -i dialog-information "Current keymap" "Using web browser keymap"

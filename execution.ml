@@ -10,38 +10,35 @@ let fork_and_run cmd =
   Unix.(create_process "/bin/sh" [| "/bin/sh"; "-c"; cmd |] stdin stdout stderr)
   |> ProcessReaper.register_for_reaping
 
-let run_action dpy (keymap, state) = function
-  | Chmap path, PRESS -> (
+let run_action dpy ((keymap, state) as vars) presstype = function
+  | Chmap path -> (
       match KeyMap.load path with
       | Ok next_keymap ->
           print_endline @@ KeyMap.show next_keymap;
           (next_keymap, state)
       | Error err ->
           pp_keymap_load_failure Format.err_formatter path err;
-          prerr_newline ();
-          (keymap, state))
-  | Key keysyms, presstype ->
+          Format.pp_print_newline Format.err_formatter ();
+          vars)
+  | Key keysyms ->
       X11.press_key dpy presstype keysyms;
-      (keymap, state)
-  | Run2 cmd, _ | Run cmd, PRESS ->
+      vars
+  | Run cmd ->
       cmd |> fork_and_run;
-      (keymap, state)
-  | Click mousebtn, presstype ->
+      vars
+  | Click mousebtn ->
       X11.click dpy presstype mousebtn;
-      (keymap, state)
-  | Delay amt, (PRESS | RELEASE) ->
+      vars
+  | Delay amt ->
       Unix.sleepf amt;
-      (keymap, state)
-  | Toggle (n, keysyms), PRESS ->
+      vars
+  | Toggle (n, keysyms) ->
       let is_pressed = IntMap.find_opt n state |> Option.value ~default:false in
       X11.press_key dpy (if is_pressed then RELEASE else PRESS) keysyms;
       let next_state = IntMap.add n (not is_pressed) state in
       (keymap, next_state)
-  | _, (RELEASE | REPEAT) -> (keymap, state)
 
-let rec run_actions dpy (keymap, state) presstype = function
+let rec run_actions dpy vars presstype = function
   | act :: xs ->
-      run_actions dpy
-        (run_action dpy (keymap, state) (act, presstype))
-        presstype xs
-  | [] -> (keymap, state)
+      run_actions dpy (run_action dpy vars presstype act) presstype xs
+  | [] -> vars
