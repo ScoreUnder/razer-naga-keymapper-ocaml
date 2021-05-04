@@ -1,8 +1,4 @@
-type parse_error =
-  | UnknownOperation of int * string
-  | MissingHyphen of int
-  | MissingEquals of int
-  | BadNumber of int * string
+type parse_error
 
 val pp_parse_error : Format.formatter -> parse_error -> unit
 
@@ -14,10 +10,7 @@ val pp_error_list : Format.formatter -> error_list -> unit
 
 val show_error_list : error_list -> string
 
-val parse_conf_action :
-  int -> string -> (Operator.t * string, parse_error) result
+val parse_conf_action : int -> string -> (Operator.t, parse_error) result
 
 val parse_conf_line :
-  int ->
-  string ->
-  (int * (Operator.t * string), parse_error) result option
+  int -> string -> (int * Operator.t, parse_error) result option

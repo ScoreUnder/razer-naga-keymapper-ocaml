@@ -2,11 +2,11 @@
  (name razer_naga_keymapper)
  (modules
   myLib
+  x11
   operator
   parser
   keyMap
   input
-  x11
   processReaper
   execution
   ioctl

@@ -66,16 +66,14 @@ module NagaDaemon = struct
     match ev.evtype with
     | EV_KEY (k, p) ->
         let offset_key = if k >= 275 then k - 262 else k - 1 in
-        IntMap.find_opt offset_key keymap |> Option.map (fun v -> (v, p))
-    | _ -> None
+        (KeyMap.find offset_key keymap, p)
+    | _ -> ([], Input.REPEAT)
 
   let rec process_events dpy keymap state wait_for_more = function
     | ev :: evs ->
-        let action = action_for_event keymap ev in
+        let acts, presstype = action_for_event keymap ev in
         let next_keymap, next_state =
-          action
-          |> Option.fold ~none:(keymap, state) ~some:(fun (acts, presstype) ->
-                 Execution.run_actions dpy (keymap, state) presstype acts)
+          Execution.run_actions dpy (keymap, state) presstype acts
         in
         process_events dpy next_keymap next_state wait_for_more evs
     | [] -> wait_for_more (process_events dpy keymap state)

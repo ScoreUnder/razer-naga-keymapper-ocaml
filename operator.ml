@@ -1,12 +1,9 @@
-type t = Chmap | Key | Run | Run2 | Click | Delay | Toggle of int
+type t =
+  | Chmap of string
+  | Key of (string * int) list
+  | Run of string
+  | Run2 of string
+  | Click of int
+  | Delay of float
+  | Toggle of int * (string * int) list
 [@@deriving show { with_path = false }]
-
-let of_string err = function
-  | "chmap" -> Ok Chmap
-  | "key" -> Ok Key
-  | "run" -> Ok Run
-  | "run2" -> Ok Run2
-  | "click" -> Ok Click
-  | "delay" -> Ok Delay
-  | "toggle" -> Ok (Toggle 0)
-  | bad -> Error (err bad)

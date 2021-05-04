@@ -1,11 +1,11 @@
 open MyLib
 
-type t = (Operator.t * string) list IntMap.t [@@deriving show]
+type t = Operator.t list IntMap.t [@@deriving show]
 
 let renumber_toggles lst =
   let open Operator in
   let rec aux n acc = function
-    | (a, (Toggle _, b)) :: xs -> aux (succ n) ((a, (Toggle n, b)) :: acc) xs
+    | (a, Toggle (_, k)) :: xs -> aux (succ n) ((a, Toggle (n, k)) :: acc) xs
     | x :: xs -> aux n (x :: acc) xs
     | [] -> List.rev acc
   in
@@ -21,3 +21,5 @@ let load path : (t, Parser.parse_error list) result =
         |> Result.map_both
              (fun x -> x |> renumber_toggles |> of_list |> group_by_rev fst snd)
              List.rev))
+
+let find = IntMap.find_default []

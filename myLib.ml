@@ -1,8 +1,6 @@
 module Result = struct
   include Result
 
-  let pull_fst (a, b) = map (fun v -> (v, b)) a
-
   let pull_snd (a, b) = map (fun v -> (a, v)) b
 
   let catch f x = try Ok (f x) with e -> Error e
