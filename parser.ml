@@ -35,8 +35,7 @@ let charcodes_to_keys num lst =
          let keyname = ch |> Uchar.to_int |> Printf.sprintf "U%04x" in
          try Ok (keyname, X11.parse_keysym keyname)
          with X11.Bad_key_name name -> Error (BadKeyName (num, name)))
-  |> Result.combine_lst_rev
-  |> Result.list_rev
+  |> Result.combine_lst_rev |> Result.list_rev
 
 let str_to_keys num str =
   Result.bind (str_to_charcodes num str) (charcodes_to_keys num)
