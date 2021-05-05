@@ -129,7 +129,8 @@ let () =
   in
 
   initial_keymap
-  |> Result.iter (fun result -> print_endline @@ KeyMap.show result);
+  |> Result.iter
+       (Format.printf "Loaded keymap from %S:@\n%a@\n%!" config_path KeyMap.pp);
 
   let open NagaDaemon.Types in
   let combined_result =
@@ -137,7 +138,7 @@ let () =
     let+ dpy = xdpy
     and* initial_keymap = initial_keymap
     and* devices = devices in
-    Printf.printf "Reading from: %s and %s\n%!" devices.keyboard.path
+    Printf.printf "Taking input from: %S and %S\n%!" devices.keyboard.path
       devices.pointer.path;
     NagaDaemon.run devices dpy initial_keymap IntMap.empty
   in

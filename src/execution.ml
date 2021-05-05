@@ -15,7 +15,8 @@ let run_action dpy presstype ((keymap, state) as vars) = function
       try
         match KeyMap.load path with
         | Ok next_keymap ->
-            print_endline @@ KeyMap.show next_keymap;
+            Format.printf "Loaded keymap from %S:@\n%a@\n%!" path KeyMap.pp
+              next_keymap;
             (next_keymap, state)
         | Error err ->
             pp_keymap_load_failure Format.err_formatter path err;
