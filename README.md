@@ -8,16 +8,18 @@ Partly to get myself more comfortable with writing more "real-world" ocaml.
 Compiling
 ---------
 
-1. Install opam and switch into an OCaml 4.12.0 switch.
+1. Install opam, as well as ensuring you have the x11 & xtest development
+   libraries and linux kernel headers installed.
+2. Switch into an OCaml 4.12.0 switch.
    ```
    opam switch install 4.12.0
    eval "$(opam env)"
    ```
-2. Install dune
+3. Install dune
    ```
    opam install dune
    ```
-3. Find dependencies and install them
+4. Find dependencies and install them
    ```
    dune external-lib-deps --missing @all
    ```
@@ -25,9 +27,9 @@ Compiling
    ```
    dune install gen
    ```
-4. Build
+5. Build
    ```
-   dune build @all
+   dune build --release
    ```
 
 The file should be built as `./razer_naga_keymapper.exe`. Yes, even on linux,
@@ -55,5 +57,11 @@ Some actions have been removed:
 * `workspace`, `workspace_r`: Invoked a command, which can be done with `run`. A more accurate command (e.g. `i3-msg`) can be used in different desktop environments intead.
 * `position`: Again invoked a command, but also I did not see much use for this.
 * `media`: Just use `key` and prefix it with `XF86`.
+* `run2`: Use `1 press release repeat - run` for example.
+
+Some have been added:
+
+* `keytap`: Quickly presses and releases a chord of keys.
+* `type`: Types out a string.
 
 [orig]: https://github.com/RaulPPelaez/Naga_KeypadMapper
