@@ -107,10 +107,13 @@ let () =
         exit 1
   in
   let initial_keymap =
-    KeyMap.load config_path
-    |> Result.map_error (fun err ->
-           Execution.pp_keymap_load_failure Format.str_formatter config_path err;
-           [ Format.flush_str_formatter () ])
+    try
+      KeyMap.load config_path
+      |> Result.map_error (fun err ->
+             Execution.pp_keymap_load_failure Format.str_formatter config_path
+               err;
+             [ Format.flush_str_formatter () ])
+    with Sys_error e -> Error [ "Could not load config file: " ^ e ]
   in
   let devices =
     NagaDaemon.(find_razer_device devices)

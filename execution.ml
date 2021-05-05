@@ -12,14 +12,18 @@ let fork_and_run cmd =
 
 let run_action dpy presstype ((keymap, state) as vars) = function
   | Chmap path -> (
-      match KeyMap.load path with
-      | Ok next_keymap ->
-          print_endline @@ KeyMap.show next_keymap;
-          (next_keymap, state)
-      | Error err ->
-          pp_keymap_load_failure Format.err_formatter path err;
-          Format.pp_print_newline Format.err_formatter ();
-          vars)
+      try
+        match KeyMap.load path with
+        | Ok next_keymap ->
+            print_endline @@ KeyMap.show next_keymap;
+            (next_keymap, state)
+        | Error err ->
+            pp_keymap_load_failure Format.err_formatter path err;
+            Format.pp_print_newline Format.err_formatter ();
+            vars
+      with Sys_error e ->
+        prerr_endline ("Could not load config file: " ^ e);
+        vars)
   | Key keysyms ->
       X11.press_key dpy presstype keysyms;
       vars
