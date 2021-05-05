@@ -5,7 +5,9 @@
  (modes native byte_complete)
  (flags
   (:standard -cc cc -rectypes))
- (promote (until-clean)))
+ (promote
+  (until-clean)
+  (into ..)))
 
 (library
  (name libs)
