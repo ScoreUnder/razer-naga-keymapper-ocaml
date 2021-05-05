@@ -55,7 +55,6 @@ module String = struct
   let starts_with ~chr str = if str = "" then false else str.[0] == chr
 end
 
-module IntMap = Map.Make (Int)
 module IntSet = Set.Make (Int)
 
 module List = struct

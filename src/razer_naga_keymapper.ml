@@ -61,22 +61,17 @@ module NagaDaemon = struct
   let init_devices devices =
     ignore @@ Types.(Ioctl.(eviocgrab devices.keyboard.fd))
 
-  let action_for_event (keymap : KeyMap.t) ev =
+  let rec process_events dpy exec_state wait_for_more =
     let open Input in
-    match ev.evtype with
-    | EV_KEY (k, p) ->
-        let offset_key = if k >= 275 then k - 262 else k - 1 in
-        (KeyMap.find (p, offset_key) keymap, p)
-    | _ -> ([], Input.REPEAT)
-
-  let rec process_events dpy keymap state wait_for_more = function
-    | ev :: evs ->
-        let acts, presstype = action_for_event keymap ev in
-        let next_keymap, next_state =
-          Execution.run_actions dpy (keymap, state) presstype acts
+    function
+    | { evtype = EV_KEY (rawkey, presstype); _ } :: evs ->
+        let key = if rawkey >= 275 then rawkey - 262 else rawkey - 1 in
+        let next_exec_state =
+          Execution.run_actions dpy exec_state presstype key
         in
-        process_events dpy next_keymap next_state wait_for_more evs
-    | [] -> wait_for_more (process_events dpy keymap state)
+        process_events dpy next_exec_state wait_for_more evs
+    | _ :: evs -> process_events dpy exec_state wait_for_more evs
+    | [] -> wait_for_more (process_events dpy exec_state)
 
   let rec wait_for_events devices dpy process_ev =
     let open Types in
@@ -91,10 +86,11 @@ module NagaDaemon = struct
     | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"
     | _ -> wait_for_events devices dpy process_ev
 
-  let run devices dpy config state =
+  let run devices dpy initial_keymap =
     init_devices devices;
     ProcessReaper.setup ();
-    wait_for_events devices dpy (process_events dpy config state)
+    wait_for_events devices dpy
+      (process_events dpy (Execution.initial_state initial_keymap))
 end
 
 let () =
@@ -140,7 +136,7 @@ let () =
     and* devices = devices in
     Printf.printf "Taking input from: %S and %S\n%!" devices.keyboard.path
       devices.pointer.path;
-    NagaDaemon.run devices dpy initial_keymap IntMap.empty
+    NagaDaemon.run devices dpy initial_keymap
   in
 
   devices
