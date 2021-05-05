@@ -29,6 +29,10 @@
  (preprocess
   (pps ppx_deriving.show)))
 
+(alias
+ (name install)
+ (deps ./razer_naga_keymapper.exe))
+
 (env
  (release
   (flags
