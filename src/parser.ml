@@ -86,22 +86,22 @@ let parse_conf_line num line =
   if String.starts_with trimmed ~chr:'#' || trimmed = "" then None
   else
     Some
-      (match String.split_once ~chr:'-' trimmed with
-      | None -> Error [ MissingHyphen num ]
-      | Some (left, right) ->
-          let open Result.Syntax in
-          let left = String.trim left in
-          let keystr, press_str =
-            left |> String.split_once ~chr:' '
-            |> Option.value ~default:(left, "")
-          in
-          let+ keypresses = parse_keypress_types num press_str
-          and* keycode =
-            Result.catch int_of_string keystr
-            |> Result.map_error @@ const @@ [ BadNumber (num, keystr) ]
-          and* action = parse_conf_action num right in
-          let keypresses =
-            if keypresses <> [] then keypresses
-            else Operator.default_activation action
-          in
-          ((keypresses, keycode), action))
+      (let open Result.Syntax in
+      let* left, right =
+        String.split_once ~chr:'-' trimmed
+        |> Option.to_result ~none:[ MissingHyphen num ]
+      in
+      let left = String.trim left in
+      let keystr, press_str =
+        left |> String.split_once ~chr:' ' |> Option.value ~default:(left, "")
+      in
+      let+ keypresses = parse_keypress_types num press_str
+      and* keycode =
+        Result.catch int_of_string keystr
+        |> Result.map_error @@ const [ BadNumber (num, keystr) ]
+      and* action = parse_conf_action num right in
+      let keypresses =
+        if keypresses <> [] then keypresses
+        else Operator.default_activation action
+      in
+      ((keypresses, keycode), action))

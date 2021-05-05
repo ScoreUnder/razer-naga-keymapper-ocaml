@@ -39,6 +39,8 @@ module Result = struct
   module Syntax = struct
     let ( let+ ) a b = map b a
 
+    let ( let* ) a b = bind a b
+
     let ( and* ) a b = combine_tup a b
   end
 end
