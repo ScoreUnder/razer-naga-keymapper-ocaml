@@ -74,9 +74,8 @@ module NagaDaemon = struct
     | [] -> wait_for_more (process_events dpy exec_state)
 
   let rec wait_for_events devices dpy process_ev =
-    let open Types in
     match
-      try Unix.select [ devices.keyboard.fd; devices.pointer.fd ] [] [] (-1.0)
+      try Unix.select devices [] [] (-1.0)
       with Unix.Unix_error (Unix.EINTR, _, _) -> ([], [], [])
     with
     | fd :: _, _, _ ->
@@ -86,22 +85,41 @@ module NagaDaemon = struct
     | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"
     | _ -> wait_for_events devices dpy process_ev
 
-  let run devices dpy initial_keymap =
+  let run devices ~keys_only dpy initial_keymap =
     init_devices devices;
     ProcessReaper.setup ();
+    let open Types in
+    let devices =
+      if keys_only then [ devices.keyboard.fd ]
+      else [ devices.keyboard.fd; devices.pointer.fd ]
+    in
     wait_for_events devices dpy
       (process_events dpy (Execution.initial_state initial_keymap))
 end
 
-let () =
-  let config_path =
-    match Sys.argv with
-    | [| _; filename |] -> filename
-    | [| _ |] -> NagaDaemon.config_path
-    | _ ->
-        prerr_endline "Expected 1 argument (config file path) or none.";
-        exit 1
+let process_args () =
+  let keys_only = ref false in
+  let argspecs =
+    [
+      ( "-k",
+        Arg.Set keys_only,
+        "Use side keys only (no top buttons) - might reduce CPU usage" );
+    ]
   in
+  let keymap = ref None in
+  let set_keymap path =
+    if !keymap = None then keymap := Some path
+    else
+      raise_notrace
+      @@ Arg.Bad "Only one keymap must be specified on the command line"
+  in
+  let usage_line = Sys.argv.(0) ^ " [options...] [keymap.txt]" in
+  Arg.parse argspecs set_keymap usage_line;
+  (!keymap, !keys_only)
+
+let () =
+  let config_path, keys_only = process_args () in
+  let config_path = Option.value config_path ~default:NagaDaemon.config_path in
   let initial_keymap =
     try
       KeyMap.load config_path
@@ -136,7 +154,7 @@ let () =
     and* devices = devices in
     Printf.printf "Taking input from: %S and %S\n%!" devices.keyboard.path
       devices.pointer.path;
-    NagaDaemon.run devices dpy initial_keymap
+    NagaDaemon.run devices ~keys_only dpy initial_keymap
   in
 
   devices
