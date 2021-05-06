@@ -1,7 +1,5 @@
 open MyLib
 
-let const x _ = x
-
 type parse_error =
   | UnknownOperation of int * string
   | MissingHyphen of int
@@ -98,7 +96,7 @@ let parse_conf_line num line =
       let+ keypresses = parse_keypress_types num press_str
       and* keycode =
         Result.catch int_of_string keystr
-        |> Result.map_error @@ const [ BadNumber (num, keystr) ]
+        |> Result.map_error @@ Fun.const [ BadNumber (num, keystr) ]
       and* action = parse_conf_action num right in
       let keypresses =
         if keypresses <> [] then keypresses

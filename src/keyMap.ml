@@ -84,8 +84,7 @@ let load path : (t, Parser.parse_error list) result =
   Gen.IO.with_lines path (fun lines ->
       lines
       |> Gen.mapi Parser.parse_conf_line
-      |> Gen.filter_map (fun x -> x)
-      |> collect_result_enum_rev
+      |> Gen.filter_map Fun.id |> collect_result_enum_rev
       |> Result.map_both
            (fun x -> x |> renumber_toggles |> of_list_rev)
            List.rev)
