@@ -4,7 +4,7 @@
  (libraries unix libs)
  (modes native byte_complete)
  (flags
-  (:standard -cc cc -rectypes))
+  (:standard -cc cc))
  (promote
   (until-clean)
   (into ..)))

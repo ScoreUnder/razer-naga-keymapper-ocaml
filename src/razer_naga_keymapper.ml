@@ -61,7 +61,7 @@ module NagaDaemon = struct
   let init_devices devices =
     ignore @@ Types.(Ioctl.(eviocgrab devices.keyboard.fd))
 
-  let rec process_events dpy exec_state wait_for_more =
+  let rec process_events dpy exec_state =
     let open Input in
     function
     | { evtype = EV_KEY (rawkey, presstype); _ } :: evs ->
@@ -69,11 +69,11 @@ module NagaDaemon = struct
         let next_exec_state =
           Execution.run_actions dpy exec_state presstype key
         in
-        process_events dpy next_exec_state wait_for_more evs
-    | _ :: evs -> process_events dpy exec_state wait_for_more evs
-    | [] -> wait_for_more (process_events dpy exec_state)
+        process_events dpy next_exec_state evs
+    | _ :: evs -> process_events dpy exec_state evs
+    | [] -> exec_state
 
-  let rec wait_for_events devices dpy process_ev =
+  let rec wait_for_events devices dpy exec_state =
     match
       try Unix.select devices [] [] (-1.0)
       with Unix.Unix_error (Unix.EINTR, _, _) -> ([], [], [])
@@ -81,9 +81,10 @@ module NagaDaemon = struct
     | fd :: _, _, _ ->
         Input.read_some_input_events fd
         |> Array.to_list
-        |> process_ev (wait_for_events devices dpy)
+        |> process_events dpy exec_state
+        |> wait_for_events devices dpy
     | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"
-    | _ -> wait_for_events devices dpy process_ev
+    | _ -> wait_for_events devices dpy exec_state
 
   let run devices ~keys_only dpy initial_keymap =
     init_devices devices;
@@ -93,8 +94,7 @@ module NagaDaemon = struct
       if keys_only then [ devices.keyboard.fd ]
       else [ devices.keyboard.fd; devices.pointer.fd ]
     in
-    wait_for_events devices dpy
-      (process_events dpy (Execution.initial_state initial_keymap))
+    wait_for_events devices dpy (Execution.initial_state initial_keymap)
 end
 
 let process_args () =
