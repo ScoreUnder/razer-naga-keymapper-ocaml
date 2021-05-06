@@ -13,5 +13,5 @@ type evtype =
 type input_event = { time_sec : int; time_usec : int; evtype : evtype }
 [@@deriving show { with_path = false }]
 
-external read_some_input_events : Unix.file_descr -> input_event array
+external read_some_input_events : Unix.file_descr -> input_event list
   = "caml_read_some_input_events"

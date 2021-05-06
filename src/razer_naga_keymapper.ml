@@ -80,7 +80,6 @@ module NagaDaemon = struct
     with
     | fd :: _, _, _ ->
         Input.read_some_input_events fd
-        |> Array.to_list
         |> process_events dpy exec_state
         |> wait_for_events devices dpy
     | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"

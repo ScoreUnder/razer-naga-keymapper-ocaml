@@ -22,7 +22,7 @@ static int tag_types[] = {[EV_REL]=2, [EV_ABS]=3, [EV_MSC]=4};
 CAMLprim value caml_read_some_input_events(value fdv)
 {
 	CAMLparam1(fdv);
-	CAMLlocal3(arr, result, evtype);
+	CAMLlocal4(list, next, result, evtype);
 
 	struct input_event out[8];
 	int fd = Int_val(fdv);
@@ -38,9 +38,9 @@ CAMLprim value caml_read_some_input_events(value fdv)
 		caml_failwith("partial read of input event");
 	}
 	size /= sizeof(out[0]);
-	arr = caml_alloc(size, 0);
+	list = Val_emptylist;
 
-	for (int n = 0; n < size; n++) {
+	for (int n = size - 1; n >= 0; n--) {
 		switch (out[n].type) {
 			case EV_SYN:
 				evtype = Val_int(0);
@@ -69,8 +69,12 @@ CAMLprim value caml_read_some_input_events(value fdv)
 		Field(result, 0) = Val_long(out[n].input_event_sec);
 		Field(result, 1) = Val_long(out[n].input_event_usec);
 		Field(result, 2) = evtype;
-		Store_field(arr, n, result);
+
+		next = caml_alloc_small(2, 0);
+		Field(next, 0) = result;
+		Field(next, 1) = list;
+		list = next;
 	}
 
-	CAMLreturn(arr);
+	CAMLreturn(list);
 }
