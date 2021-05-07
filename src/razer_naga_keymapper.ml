@@ -59,7 +59,7 @@ module NagaDaemon = struct
     devices |> List.find_map_opt open_if_exists
 
   let init_devices devices =
-    ignore @@ Types.(Ioctl.(eviocgrab devices.keyboard.fd))
+    Ioctl.eviocgrab devices.Types.keyboard.fd |> ignore
 
   let rec process_events dpy exec_state =
     let open Input in
