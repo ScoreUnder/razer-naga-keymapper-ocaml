@@ -63,5 +63,6 @@ Some have been added:
 
 * `keytap`: Quickly presses and releases a chord of keys.
 * `type`: Types out a string.
+* `runwait`: Runs a command and waits for it to finish before continuing.
 
 [orig]: https://github.com/RaulPPelaez/Naga_KeypadMapper

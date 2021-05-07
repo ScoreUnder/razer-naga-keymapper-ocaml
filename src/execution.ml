@@ -12,7 +12,10 @@ let pp_keymap_load_failure fmt path err =
 
 let fork_and_run cmd =
   Unix.(create_process "/bin/sh" [| "/bin/sh"; "-c"; cmd |] stdin stdout stderr)
-  |> ProcessReaper.register_for_reaping
+
+let rec wait_pid pid =
+  try Unix.waitpid [] pid
+  with Unix.Unix_error (Unix.EINTR, _, _) -> wait_pid pid
 
 let run_action dpy presstype vars = function
   | Chmap path -> (
@@ -40,7 +43,10 @@ let run_action dpy presstype vars = function
       X11.type_seq dpy keysyms;
       vars
   | Run cmd ->
-      cmd |> fork_and_run;
+      cmd |> fork_and_run |> ProcessReaper.register_for_reaping;
+      vars
+  | RunWait cmd ->
+      cmd |> fork_and_run |> wait_pid |> ignore;
       vars
   | Click mousebtn ->
       X11.click dpy presstype mousebtn;

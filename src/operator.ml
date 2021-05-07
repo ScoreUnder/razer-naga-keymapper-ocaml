@@ -6,6 +6,7 @@ type t =
   | KeyTap of keys
   | Type of keys
   | Run of string
+  | RunWait of string
   | Click of int
   | Delay of float
   | Toggle of int * keys
@@ -19,6 +20,7 @@ let default_activation =
   | KeyTap _ -> [ PRESS ]
   | Type _ -> [ PRESS ]
   | Run _ -> [ PRESS ]
+  | RunWait _ -> [ PRESS ]
   | Click _ -> [ PRESS; RELEASE; REPEAT ]
   | Delay _ -> [ PRESS; RELEASE ]
   | Toggle _ -> [ PRESS ]

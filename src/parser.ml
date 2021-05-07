@@ -46,6 +46,7 @@ let operator_of_string line_num cmd =
   | "keytap" -> parse_syms_then (fun s -> KeyTap s) line_num cmd
   | "type" -> str_to_keys line_num cmd |> Result.map (fun r -> Type r)
   | "run" -> Ok (Run cmd)
+  | "runwait" -> Ok (RunWait cmd)
   | "click" ->
       int_of_string_opt cmd
       |> Option.to_result ~none:[ BadNumber (line_num, cmd) ]
