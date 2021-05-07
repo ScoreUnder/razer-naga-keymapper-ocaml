@@ -10,9 +10,7 @@ val pp_error_list : Format.formatter -> error_list -> unit
 
 val show_error_list : error_list -> string
 
-val parse_conf_action : int -> string -> (Operator.t, parse_error list) result
-
 val parse_conf_line :
   int ->
   string ->
-  ((Input.keypress list * int) * Operator.t, parse_error list) result option
+  ((Input.keypress list * int) * Operator.t, error_list) result option
