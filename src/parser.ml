@@ -62,7 +62,8 @@ let parse_conf_action num line =
   match String.split_once ~chr:'=' line with
   | None -> Error [ MissingEquals num ]
   | Some (left, right) ->
-      operator_of_string num (String.trim right) (String.trim left)
+      operator_of_string num (String.trim right)
+        (String.trim left |> String.lowercase_ascii)
 
 let parse_keypress_type line_num str =
   let open Input in
