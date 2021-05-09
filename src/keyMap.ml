@@ -73,12 +73,8 @@ let of_list_rev : ((Input.keypress list * int) * Operator.t) list -> t =
     KeyMap.empty
 
 let collect_result_enum_rev e =
-  Gen.fold
-    (fun acc v ->
-      match acc with
-      | Ok lst -> ( match v with Ok v -> Ok (v :: lst) | Error _ as e -> e)
-      | Error lst -> Error (match v with Ok _ -> lst | Error v -> v @ lst))
-    (Ok []) e
+  Gen.fold (Fun.flip Result.combine_lst_right_one) (Ok []) e
+  |> Result.map_error List.flatten
 
 let load path : (t, Parser.parse_error list) result =
   Gen.IO.with_lines path (fun lines ->
