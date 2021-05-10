@@ -65,4 +65,6 @@ let tests =
       |> test_err "bad number in delay" Parser.[ BadNumber (1, "123hello") ];
       "1 - key = hyperdrive"
       |> test_err "bad key name" Parser.[ BadKeyName (1, "hyperdrive") ];
+      "1 press - key = 102"
+      |> test_ok_simple "int keycode" @@ Operator.Key [ ("102", 102) ];
     ] )
