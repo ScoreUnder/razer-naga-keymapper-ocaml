@@ -79,7 +79,9 @@ let collect_result_enum_rev e =
 let load_from_gen lines =
   lines
   |> Gen.mapi Parser.parse_conf_line
-  |> Gen.filter_map Fun.id |> collect_result_enum_rev
+  |> Gen.filter_map Fun.id
+  |> Gen.map (Result.map_error List.rev)
+  |> collect_result_enum_rev
   |> Result.map_both (fun x -> x |> renumber_toggles |> of_list_rev) List.rev
 
 let load path : (t, Parser.parse_error list) result =

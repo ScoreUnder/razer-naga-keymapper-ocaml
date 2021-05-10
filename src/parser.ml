@@ -58,7 +58,7 @@ let parse_conf_action num line =
 
 let parse_keypress_type line_num str =
   let open Input in
-  match str with
+  match String.uppercase_ascii str with
   | "PRESS" -> Ok PRESS
   | "RELEASE" -> Ok RELEASE
   | "REPEAT" -> Ok REPEAT
@@ -67,8 +67,7 @@ let parse_keypress_type line_num str =
 let parse_keypress_types num str =
   String.split_on_char ' ' str
   |> List.filter_map (fun s ->
-         if s = "" then None
-         else Some (parse_keypress_type num (String.uppercase_ascii s)))
+         if s = "" then None else Some (parse_keypress_type num s))
   |> Result.combine_lst_rev
 
 let parse_conf_line num line =
