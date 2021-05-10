@@ -14,7 +14,7 @@ let str_to_charcodes line_num s =
     | `Uchar u -> consume (Ok u :: acc)
     | `End -> acc
     | `Malformed b -> consume (Error (BadUnicode (line_num, b)) :: acc)
-    | `Await -> failwith "Uutf expects manual supply?"
+    | `Await -> failwith "Uutf expects manual supply?" [@coverage off]
   in
   Result.combine_lst_rev (consume [])
 
