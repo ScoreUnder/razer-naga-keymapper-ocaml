@@ -2,8 +2,7 @@ open TestTypes
 
 let parse_result =
   Alcotest.(
-    option
-      (result (pair (pair (list keypress) int) operator) error_list))
+    option (result (pair (pair (list keypress) int) operator) error_list))
 
 let test_err name err map =
   Alcotest.test_case name `Quick (fun () ->
