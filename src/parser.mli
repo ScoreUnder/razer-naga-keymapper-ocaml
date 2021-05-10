@@ -1,4 +1,4 @@
-type parse_error
+include Parser_intf.Intf
 
 val pp_parse_error : Format.formatter -> parse_error -> unit
 

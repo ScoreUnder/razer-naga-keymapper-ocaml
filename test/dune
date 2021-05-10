@@ -1,0 +1,8 @@
+(executable
+ (name unit)
+ (libraries libs alcotest))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:unit.exe} --show-errors)))

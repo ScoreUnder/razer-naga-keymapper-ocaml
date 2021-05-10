@@ -76,13 +76,15 @@ let collect_result_enum_rev e =
   Gen.fold (Fun.flip Result.combine_lst_right_one) (Ok []) e
   |> Result.map_error List.flatten
 
+let load_from_gen lines =
+  lines
+  |> Gen.mapi Parser.parse_conf_line
+  |> Gen.filter_map Fun.id |> collect_result_enum_rev
+  |> Result.map_both (fun x -> x |> renumber_toggles |> of_list_rev) List.rev
+
 let load path : (t, Parser.parse_error list) result =
-  Gen.IO.with_lines path (fun lines ->
-      lines
-      |> Gen.mapi Parser.parse_conf_line
-      |> Gen.filter_map Fun.id |> collect_result_enum_rev
-      |> Result.map_both
-           (fun x -> x |> renumber_toggles |> of_list_rev)
-           List.rev)
+  Gen.IO.with_lines path load_from_gen
 
 let find = KeyMap.find_default []
+
+let empty = KeyMap.empty

@@ -17,6 +17,7 @@
   x11
   input
   operator
+  parser_intf
   parser
   keyMap
   processReaper
@@ -28,6 +29,8 @@
   (names ioctl_stub input_stub x11_stub))
  (flags
   (:standard -cclib -lX11 -cclib -lXtst))
+ (instrumentation
+  (backend bisect_ppx))
  (preprocess
   (pps ppx_deriving.show)))
 
