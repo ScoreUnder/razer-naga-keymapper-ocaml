@@ -37,10 +37,7 @@ module NagaDaemon = struct
         ("Razer_Naga_Epic_Chroma_Dock-event-mouse", POINTER);
       ];
       (* NAGA CHROMA *)
-      [
-        ("Razer_Naga_Chroma-if02-event-kbd", KEYBOARD);
-        ("Razer_Naga_Chroma-event-mouse", POINTER);
-      ];
+      [ ("Razer_Naga_Chroma-if02-event-kbd", KEYBOARD) ];
       (* NAGA HEX *)
       [
         ("Razer_Naga_Hex-if01-event-kbd", KEYBOARD);
