@@ -1,64 +1,99 @@
 open MyLib
 
+type devtype = KEYBOARD | POINTER
+
 module NagaDaemon = struct
   let devices =
     let dev_prefix = "/dev/input/by-id/usb-Razer_" in
     [
       (* NAGA EPIC *)
-      ("Razer_Naga_Epic-if01-event-kbd", "Razer_Naga_Epic-event-mouse");
+      [
+        ("Razer_Naga_Epic-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga_Epic-event-mouse", POINTER);
+      ];
       (* NAGA EPIC DOCK *)
-      ("Razer_Naga_Epic_Dock-if01-event-kbd", "Razer_Naga_Epic_Dock-event-mouse");
+      [
+        ("Razer_Naga_Epic_Dock-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga_Epic_Dock-event-mouse", POINTER);
+      ];
       (* NAGA 2014 *)
-      ("Razer_Naga_2014-if02-event-kbd", "Razer_Naga_2014-event-mouse");
+      [
+        ("Razer_Naga_2014-if02-event-kbd", KEYBOARD);
+        ("Razer_Naga_2014-event-mouse", POINTER);
+      ];
       (* NAGA MOLTEN *)
-      ("Razer_Naga-if01-event-kbd", "Razer_Naga-event-mouse");
+      [
+        ("Razer_Naga-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga-event-mouse", POINTER);
+      ];
       (* NAGA EPIC CHROMA *)
-      ( "Razer_Naga_Epic_Chroma-if01-event-kbd",
-        "Razer_Naga_Epic_Chroma-event-mouse" );
+      [
+        ("Razer_Naga_Epic_Chroma-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga_Epic_Chroma-event-mouse", POINTER);
+      ];
       (* NAGA EPIC CHROMA DOCK *)
-      ( "Razer_Naga_Epic_Chroma_Dock-if01-event-kbd",
-        "Razer_Naga_Epic_Chroma_Dock-event-mouse" );
+      [
+        ("Razer_Naga_Epic_Chroma_Dock-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga_Epic_Chroma_Dock-event-mouse", POINTER);
+      ];
       (* NAGA CHROMA *)
-      ("Razer_Naga_Chroma-if02-event-kbd", "Razer_Naga_Chroma-event-mouse");
+      [
+        ("Razer_Naga_Chroma-if02-event-kbd", KEYBOARD);
+        ("Razer_Naga_Chroma-event-mouse", POINTER);
+      ];
       (* NAGA HEX *)
-      ("Razer_Naga_Hex-if01-event-kbd", "Razer_Naga_Hex-event-mouse");
+      [
+        ("Razer_Naga_Hex-if01-event-kbd", KEYBOARD);
+        ("Razer_Naga_Hex-event-mouse", POINTER);
+      ];
       (* NAGA HEX v2 *)
-      ("Razer_Naga_Hex_V2-if02-event-kbd", "Razer_Naga_Hex_V2-event-mouse");
+      [
+        ("Razer_Naga_Hex_V2-if02-event-kbd", KEYBOARD);
+        ("Razer_Naga_Hex_V2-event-mouse", POINTER);
+      ];
       (* Naga Trinity *)
-      ( "Razer_Naga_Trinity_00000000001A-if02-event-kbd",
-        "Razer_Naga_Trinity_00000000001A-event-mouse" );
+      [
+        ("Razer_Naga_Trinity_00000000001A-if02-event-kbd", KEYBOARD);
+        ("Razer_Naga_Trinity_00000000001A-event-mouse", POINTER);
+      ];
     ]
-    |> List.map (fun (a, b) -> (dev_prefix ^ a, dev_prefix ^ b))
+    |> List.map (List.map (fun (a, b) -> (dev_prefix ^ a, b)))
 
   let config_path = "mapping_01.txt"
 
   module Types = struct
-    type open_file = { path : string; fd : Unix.file_descr }
-
-    type dev_pair = { keyboard : open_file; pointer : open_file }
+    type open_file = { path : string; fd : Unix.file_descr; typ : devtype }
   end
 
-  let open_if_exists (devkbd, devptr) =
-    try
-      let kbdfd = Unix.openfile devkbd [ Unix.O_RDONLY ] 0 in
-      try
-        let ptrfd = Unix.openfile devptr [ Unix.O_RDONLY ] 0 in
-        Some
-          Types.
-            {
-              keyboard = { path = devkbd; fd = kbdfd };
-              pointer = { path = devptr; fd = ptrfd };
-            }
-      with Unix.Unix_error _ ->
-        Unix.close kbdfd;
-        None
-    with Unix.Unix_error _ -> None
+  let open_if_exists devlst =
+    List.fold_left
+      (fun acc (path, typ) ->
+        match acc with
+        | None -> None
+        | Some lst -> (
+            try
+              let fd = Unix.(openfile path [ O_RDONLY ] 0) in
+              let openfile = Types.{ path; fd; typ } in
+              Some (openfile :: lst)
+            with Unix.Unix_error _ ->
+              List.iter (fun openfile -> Unix.close openfile.Types.fd) lst;
+              None))
+      (Some []) devlst
 
-  let find_razer_device (devices : (string * string) list) :
-      Types.dev_pair option =
+  let find_razer_device ~keys_only devices =
+    let devices =
+      if keys_only then
+        List.map (List.filter (fun (_, t) -> t = KEYBOARD)) devices
+      else devices
+    in
     devices |> List.find_map_opt open_if_exists
 
-  let init_devices devices = Ioctl.eviocgrab devices.Types.keyboard.fd |> ignore
+  let init_devices devices =
+    let open Types in
+    devices
+    |> List.iter (function
+         | { typ = KEYBOARD; fd; _ } -> Ioctl.eviocgrab fd |> ignore
+         | _ -> ())
 
   let rec process_events dpy exec_state =
     let open Input in
@@ -84,14 +119,10 @@ module NagaDaemon = struct
     | _, _, _exfd :: _ -> failwith "Exceptional condition in file descriptor?"
     | _ -> wait_for_events devices dpy exec_state
 
-  let run devices ~keys_only dpy initial_keymap =
+  let run devices dpy initial_keymap =
     init_devices devices;
     ProcessReaper.setup ();
-    let open Types in
-    let devices =
-      if keys_only then [ devices.keyboard.fd ]
-      else [ devices.keyboard.fd; devices.pointer.fd ]
-    in
+    let devices = List.map (fun d -> d.Types.fd) devices in
     wait_for_events devices dpy (Execution.initial_state initial_keymap)
 end
 
@@ -128,7 +159,7 @@ let () =
     with Sys_error e -> Error [ "Could not load config file: " ^ e ]
   in
   let devices =
-    NagaDaemon.(find_razer_device devices)
+    NagaDaemon.(find_razer_device ~keys_only devices)
     |> Option.to_result
          ~none:
            [
@@ -150,15 +181,15 @@ let () =
     let+ dpy = xdpy
     and* initial_keymap = initial_keymap
     and* devices = devices in
-    Printf.printf "Taking input from: %S and %S\n%!" devices.keyboard.path
-      devices.pointer.path;
-    NagaDaemon.run devices ~keys_only dpy initial_keymap
+    List.map (fun d -> Printf.sprintf "%S" d.path) devices
+    |> String.concat ", "
+    |> Printf.printf "Taking input from: %s\n%!";
+    NagaDaemon.run devices dpy initial_keymap
   in
 
   devices
-  |> Result.iter (fun devices ->
-         Unix.close devices.keyboard.fd;
-         Unix.close devices.pointer.fd);
+  |> Result.fold ~ok:Fun.id ~error:(Fun.const [])
+  |> List.iter (fun device -> Unix.close device.fd);
 
   combined_result
   |> Result.iter_error (fun err ->
